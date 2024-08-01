@@ -21,9 +21,17 @@ class Disk:
         # 初始化根目录
         self._root_dir = system_io.read_block(ROOT_DIR_BLOCK)
 
+
+    """
+        intro:
+        创建目录项（文件）
+        parameters:
+        path: 绝对路径 / 文件名
+        ext: 
+    """
     def create_file(self, path, ext, content):
         # 解析路径并找到父目录块
-        parent_dir_block, dir_name = self.find_parent_dir(path)
+        parent_dir_block, dir_name = self.find_directory_entry(path)
         if not parent_dir_block:
             print(f"Directory not found: {path}")
             return
@@ -64,24 +72,24 @@ class Disk:
         # 删除目录项
         self.delete_directory_entry(dir_block, entry_offset)
 
-    def find_parent_dir(self, path):
-        # 解析路径，找到父目录块
-        # 例如：path = \aa\bb\file.txt
-        parts = path.strip("\\").split("\\")
-        current_block = ROOT_DIR_BLOCK
-        for part in parts[:-1]:  # 不包括最后一个部分，即文件名
-            dir_entry = self.find_directory_entry_in_block(current_block, part)
-            if not dir_entry:
-                return None, part
-            current_block = dir_entry["start_block"]
-        return current_block, parts[-1]
+    # def find_parent_dir(self, path):
+    #     # 解析路径，找到父目录块
+    #     # path = \aa\bb\file.txt
+    #     parts = path.strip("\\").split("\\")
+    #     current_block = ROOT_DIR_BLOCK
+    #     for part in parts[:-1]:  # 不包括文件名，要切去最后一部分
+    #         dir_entry = self.find_directory_entry_in_block(current_block, part)
+    #         if not dir_entry:
+    #             return None, part
+    #         current_block = dir_entry["start_block"]
+    #     return current_block, parts[-1]
 
     def find_directory_entry(self, path):
         # 解析路径并找到文件目录项
         parts = path.strip("\\").split("\\")
         current_block = ROOT_DIR_BLOCK
 
-        for part in parts:
+        for part in parts[:-1]:
             dir_entry = self.find_directory_entry_in_block(current_block, part)
             if not dir_entry:
                 return None, None
@@ -93,7 +101,7 @@ class Disk:
             entry = block_data[i:i + DIRECTORY_ENTRY_SIZE]
             if entry[:3].strip(b'\x00') == parts[-1].encode():
                 return current_block, i
-        return None, None
+        return current_block, None
 
     def find_directory_entry_in_block(self, block, name):
         block_data = system_io.read_block(block)
@@ -178,14 +186,14 @@ class Disk:
         current_block = start_block
         while current_block != 0xFF:
             content += system_io.read_block(current_block)
-            current_block = self._fat.fat[current_block]
+            current_block = self._fat.get_next_block(current_block)
 
         # 创建目标文件
         self.create_file(dest_path, dir_entry["ext"], content[:length])
 
     def mkdir(self, path):
         # 解析路径并找到父目录块
-        parent_dir_block, dir_name = self.find_parent_dir(path)
+        parent_dir_block, _ = self.find_directory_entry(path)
         if not parent_dir_block:
             print(f"Directory not found: {path}")
             return
