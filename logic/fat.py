@@ -4,7 +4,7 @@ import system_io
 FAT_SIZE = BLOCK_SIZE * 2  # FAT 占用两个块，共 128 字节
 
 
-class fat:
+class FAT:
     """
     构造函数，将磁盘的文件分配表读进来
     """
@@ -50,4 +50,5 @@ class fat:
 
 
 if __name__ == '__main__':
+    fat_class = FAT()
     pass

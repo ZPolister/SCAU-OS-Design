@@ -23,4 +23,7 @@ FAT_EOF = 0xFF
 # FAT磁盘块空标记
 FAT_NULL = 0x00
 
+# 目录项大小
+DIRECTORY_ENTRY_SIZE = 8
+
 
