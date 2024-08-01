@@ -48,6 +48,9 @@ class FAT:
 
         self._write_fat()
 
+    def get_next_block(self, this_block):
+        return self._fat_buffer[this_block]
+
 
 if __name__ == '__main__':
     fat_class = FAT()

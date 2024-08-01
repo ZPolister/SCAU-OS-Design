@@ -1,3 +1,4 @@
+import logging
 import os
 import struct
 from logic_constant import *
@@ -75,6 +76,25 @@ class Disk:
             current_block = dir_entry["start_block"]
         return current_block, parts[-1]
 
+    def find_directory_entry(self, path):
+        # 解析路径并找到文件目录项
+        parts = path.strip("\\").split("\\")
+        current_block = ROOT_DIR_BLOCK
+
+        for part in parts:
+            dir_entry = self.find_directory_entry_in_block(current_block, part)
+            if not dir_entry:
+                return None, None
+            current_block = dir_entry["start_block"]
+
+        # 返回找到的文件目录项块号和目录项偏移量
+        block_data = system_io.read_block(current_block)
+        for i in range(0, len(block_data), DIRECTORY_ENTRY_SIZE):
+            entry = block_data[i:i + DIRECTORY_ENTRY_SIZE]
+            if entry[:3].strip(b'\x00') == parts[-1].encode():
+                return current_block, i
+        return None, None
+
     def find_directory_entry_in_block(self, block, name):
         block_data = system_io.read_block(block)
         for i in range(0, len(block_data), DIRECTORY_ENTRY_SIZE):
@@ -140,7 +160,7 @@ class Disk:
         current_block = start_block
         while current_block != 0xFF:
             content += system_io.read_block(current_block)
-            current_block = self._fat.fat[current_block]
+            current_block = self._fat.get_next_block(current_block)
         print(content[:length].decode())
 
     def copy_file(self, src_path, dest_path):
@@ -219,7 +239,7 @@ class Disk:
         current_block = start_block
         while current_block != 0xFF:
             content += system_io.read_block(current_block)
-            current_block = self._fat.fat[current_block]
+            current_block = self._fat._fat_buffer[current_block]
         content = content[:length].decode()
 
         # TODO 调用处理器部分实现运行
@@ -229,7 +249,7 @@ class Disk:
         # 解析路径并找到目录块
         dir_block, _ = self.find_parent_dir(path)
         if dir_block is None:
-            print(f"Directory not found: {path}")
+            logging.log(f"Directory not found: {path}")
             return
 
         # 读取目录块
@@ -240,7 +260,7 @@ class Disk:
             entry = block_data[i:i + DIRECTORY_ENTRY_SIZE]
             if entry[:3] != b'\x00\x00\x00':  # 过滤空目录项
                 dir_entry = self.parse_directory_entry(entry)
-                print(f"{dir_entry['filename']}.{dir_entry['ext']}")
+                print(f"{dir_entry['filename']}{'.' + dir_entry['ext'] if dir_entry['ext'] != '\x00' else ''}")
 
     def command_interface(self):
         while True:
