@@ -20,7 +20,7 @@ class FAT:
         system_io.write_block(FAT_START_BLOCK, bytes(self._fat_buffer[:BLOCK_SIZE]))
         system_io.write_block(FAT_END_BLOCK, bytes(self._fat_buffer[BLOCK_SIZE:]))
 
-    def _find_free_blocks(self, count) -> list:
+    def _find_free_blocks(self, count: int) -> list[int] or None:
         free_blocks = []
         for i in range(len(self._fat_buffer)):
             if self._fat_buffer[i] == FAT_NULL:
@@ -39,7 +39,7 @@ class FAT:
         self._write_fat()
         return free_blocks
 
-    def free_blocks(self, start_block):
+    def free_blocks(self, start_block: int):
         current = start_block
         while current != FAT_EOF:
             next_block = self._fat_buffer[current]
@@ -48,8 +48,17 @@ class FAT:
 
         self._write_fat()
 
-    def get_next_block(self, this_block):
+    def get_next_block(self, this_block: int) -> int:
         return self._fat_buffer[this_block]
+
+    def add_block(self, previous_block: int, new_block: int):
+        current_block = previous_block
+        while current_block != FAT_EOF:
+            previous_block = current_block
+            current_block = self.get_next_block(current_block)
+
+        self._fat_buffer[previous_block] = new_block
+        self._write_fat()
 
 
 if __name__ == '__main__':
