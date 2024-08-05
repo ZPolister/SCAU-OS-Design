@@ -1,6 +1,6 @@
 import logging
 
-import logic_constant
+import os_backend.logic.logic_constant as logic_constant
 
 """_summary_
     对磁盘文件的IO，链接实机单文件

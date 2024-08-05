@@ -1,5 +1,5 @@
-from logic_constant import *
-import system_io
+from os_backend.logic.logic_constant import *
+import os_backend.logic.system_io as system_io
 
 FAT_SIZE = BLOCK_SIZE * 2  # FAT 占用两个块，共 128 字节
 

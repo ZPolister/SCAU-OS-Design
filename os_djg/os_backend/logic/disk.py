@@ -1,9 +1,10 @@
 import logging
 import os
 import struct
-from logic_constant import *
-import system_io
-import fat
+from os_backend.logic.logic_constant import *
+import os_backend.logic.system_io as system_io
+import os_backend.logic.fat as fat
+import os_backend.global_language.text as text
 
 # 根目录块大小
 ROOT_DIR_BLOCK = 2
@@ -38,15 +39,14 @@ class Disk:
         # 解析路径并找到父目录块
         block, _, entry = self.find_directory_entry(path)
         if not block:
-            print(f"Directory not found: {path}")
-            return
+            return text.get_text('disk.dir_not_found') + f':{path}'
+
 
         # 分配文件所需的磁盘块
         needed_blocks = (len(content) // BLOCK_SIZE) + 1
         blocks = self._fat.allocate_blocks(needed_blocks)
         if not blocks:
-            print("Not enough space on disk")
-            return
+            return text.get_text('disk.not_enough_space')
 
         # 创建目录项
         filename = os.path.basename(path)
@@ -352,9 +352,12 @@ class Disk:
         # 逐行输出目录项
         for i in range(0, len(block_data), DIRECTORY_ENTRY_SIZE):
             entry = block_data[i:i + DIRECTORY_ENTRY_SIZE]
+            result = []
             if entry[:3] != b'\x00\x00\x00':  # 过滤空目录项
                 dir_entry = self.parse_directory_entry(entry)
-                print(f"{dir_entry['filename']}{'.' + dir_entry['ext'] if dir_entry['ext'] != '\x00' else ''}")
+                result.append(f"{dir_entry['filename']}{'.' + dir_entry['ext'] if dir_entry['ext'] != '\x00' else ''}")
+
+            return result
 
     def command_interface(self):
         while True:
@@ -383,6 +386,9 @@ class Disk:
             else:
                 print("Unknown command")
 
+
+# 模块化单例
+DiskService = Disk()
 
 if __name__ == "__main__":
     disk = Disk()

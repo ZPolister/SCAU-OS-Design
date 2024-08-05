@@ -3,6 +3,9 @@ Global Language
 """
 text = {
     'en': {
+        'disk.dir_not_found': 'Directory not found',
+        'disk.file_not_found': 'File not found',
+        'disk.not_enough_space': 'Not enough space',
 
     },
 
