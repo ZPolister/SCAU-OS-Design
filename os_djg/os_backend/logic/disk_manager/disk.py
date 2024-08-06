@@ -347,14 +347,15 @@ class Disk:
             dir_block = self._fat.get_next_block(dir_block)
 
         # 逐行输出目录项
+        result = []
         for i in range(0, len(block_data), DIRECTORY_ENTRY_SIZE):
             entry = block_data[i:i + DIRECTORY_ENTRY_SIZE]
-            result = []
+
             if entry[:3] != b'\x00\x00\x00':  # 过滤空目录项
                 dir_entry = self.parse_directory_entry(entry)
                 result.append(f"{dir_entry['filename']}{'.' + dir_entry['ext'] if dir_entry['ext'] != '\x00' else ''}")
 
-            return result
+        return result
 
     def command_interface(self):
         while True:
