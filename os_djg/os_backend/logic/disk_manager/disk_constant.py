@@ -3,7 +3,7 @@
     全局常量
     
     usage:
-    from logic_constant import *    
+    from disk_constant import *
 """
 
 # 磁盘文件名

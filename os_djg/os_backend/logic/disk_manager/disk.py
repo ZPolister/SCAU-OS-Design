@@ -1,9 +1,10 @@
 import logging
 import os
 import struct
-from os_backend.logic.logic_constant import *
-import os_backend.logic.system_io as system_io
-import os_backend.logic.fat as fat
+
+from os_backend.logic.disk_manager.disk_constant import *
+import os_backend.logic.disk_manager.system_io as system_io
+import os_backend.logic.disk_manager.fat as fat
 import os_backend.global_language.text as text
 
 # 根目录块大小
@@ -22,8 +23,6 @@ class Disk:
         # 初始化根目录
         self._root_dir = system_io.read_block(ROOT_DIR_BLOCK)
 
-
-
     def is_dir(self, entry) -> bool:
         return entry["ext"] == '\x00'
 
@@ -35,12 +34,12 @@ class Disk:
         ext: 拓展
         content：内容
     """
+
     def create_file(self, path, ext, content):
         # 解析路径并找到父目录块
         block, _, entry = self.find_directory_entry(path)
         if not block:
             return text.get_text('disk.dir_not_found') + f':{path}'
-
 
         # 分配文件所需的磁盘块
         needed_blocks = (len(content) // BLOCK_SIZE) + 1
@@ -132,8 +131,6 @@ class Disk:
         entry = self.find_directory_entry_in_block(current_block, parts[-1])
         # 返回找到的文件目录项块号和目录项偏移量
         return current_block, entry[0], entry[1]
-
-
 
     def find_directory_entry_in_block(self, block, name):
         """ docstrings
