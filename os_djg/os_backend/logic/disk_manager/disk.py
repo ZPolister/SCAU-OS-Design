@@ -48,7 +48,8 @@ class Disk:
             return text.get_text('disk.not_enough_space')
 
         # 创建目录项
-        filename = os.path.basename(path)
+        path = os.path.normpath(path)
+        filename = path.split(os.sep)[-1]
         dir_entry = self.create_directory_entry(filename, ext, blocks[0], len(content))
         self.write_directory_entry(block, dir_entry)
 
