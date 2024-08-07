@@ -114,5 +114,7 @@ class MemoryManager:
         return self.total_memory, self.system_memory, memory_blocks
 
 
+memoryService = MemoryManager()
+
 if __name__ == "__main__":
     pass

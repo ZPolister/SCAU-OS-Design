@@ -15,8 +15,11 @@ relative_clock = TIME_SLICE  # 相对时钟
 pcb_table = []  # 进程控制块表
 ready_queue = []  # 就绪队列
 blocked_queue = []  # 阻塞队列
-idle_process = PCB(0, [], '')  # 闲逛进程
+idle_process = PCB(0, [], '', -1)  # 闲逛进程
 running_process = idle_process  # 当前运行的进程
+
+# 总进程计数
+process_id = 1
 
 
 def schedule():
@@ -43,7 +46,7 @@ def schedule():
         running_process = idle_process
 
 
-def create(instructions: list[str], path: str):
+def create(instructions: list[str], path: str) -> int or None:
     """
     创建一个进程
     Args:
@@ -52,11 +55,22 @@ def create(instructions: list[str], path: str):
     Returns:
 
     """
-    pid = len(pcb_table) + 1
-    new_pcb = PCB(pid, instructions, path)
+
+    global running_process, PC, x, relative_clock, process_id
+
+    # 申请内存，内存不足时无法运行
+    from os_backend.logic.memory_manager.memory_manager import memoryService
+    start_pos = memoryService.allocate_memory(sum(len(item) for item in instructions))
+    if start_pos is None:
+        return None
+
+    pid = process_id
+    new_pcb = PCB(pid, instructions, path, start_pos)
     pcb_table.append(new_pcb)
     ready_queue.append(new_pcb)
-    print(f"Process {pid} created: {instructions}")
+    # print(f"Process {pid} created: {instructions}")
+    process_id += 1
+    return pid
 
 
 def destroy():
@@ -70,6 +84,9 @@ def destroy():
     if running_process is not None:
         print(f"Process {running_process.pid} finished with x = {x}")
         pcb_table.remove(running_process)
+        # 释放占用的内存
+        from os_backend.logic.memory_manager.memory_manager import memoryService
+        memoryService.free_memory(running_process.start_pos)
         running_process = None
         schedule()
 
@@ -178,10 +195,10 @@ def system_timer():
 
 
 if '__main__' == __name__:
-    create(['x=1', 'x++', '!A5', 'x--', 'end'], '')
-    create(['x=1', 'x=7', '!A5', 'x--', 'end'], '')
-    create(['x=1', 'x++', 'x=4', 'x--', 'x=9', '!B3', 'x--', 'end'], '')
-    create(['x=2', 'x++', 'x++', 'end'], '')
-
     # 启动系统时钟
     threading.Thread(target=system_timer).start()
+    create(['x=1', 'x++', '!A5', 'x--', 'end'], '')
+    create(['x=1', 'x=7', '!A5', 'x--', 'end'], '')
+    time.sleep(3)
+    create(['x=1', 'x++', 'x=4', 'x--', 'x=9', '!B3', 'x--', 'end'], '')
+    create(['x=2', 'x++', 'x++', 'end'], '')

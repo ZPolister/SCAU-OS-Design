@@ -335,6 +335,10 @@ class Disk:
         content = content.split(' ')
         content = list(filter(None, content))
 
+        # # 占用内存
+        # from os_backend.logic.memory_manager.memory_manager import memoryService
+        # start_position = memoryService.allocate_memory(sum(len(item) for item in content))
+        # CPU执行
         from os_backend.logic.process_manager.schedule import create
         create(content, path)
 
