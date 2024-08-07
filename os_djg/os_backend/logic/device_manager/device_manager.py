@@ -1,5 +1,7 @@
 from collections import deque
+
 from os_backend.logic.device_manager.device import Device
+from os_backend.logic.process_manager import pcb
 
 
 class DeviceManager:
@@ -12,11 +14,12 @@ class DeviceManager:
         self.allocation_table = {}
         self.waiting_queue = deque()
 
-    def request_device(self, process_id: str, device_name: str) -> bool:
+    def request_device(self, process: pcb, device_name: str, device_time: int) -> bool:
         """
         请求设备
         Args:
-            process_id: 进程ID
+            device_time: 进程所需使用设备时间
+            process: 进程ID
             device_name: 请求的设备名称
 
         Returns:
@@ -26,18 +29,28 @@ class DeviceManager:
             print(f"Device {device_name} does not exist.")
             return False
 
+        print(process.instructions)
+        process_id = process.pid
         device = self.devices[device_name]
         if device.available_count > 0:
             device.available_count -= 1
-            self.allocation_table[process_id] = device_name
+            self.allocation_table[process_id] = {
+                "process": process,
+                "device": device_name,
+                "time": device_time
+            }
             print(f"设备 {device_name} 分配给 {process_id}")
             return True
         else:
             print(f"设备 {device_name} 不足. 进程 {process_id} 进入等待队列")
-            self.waiting_queue.append((process_id, device_name))
+            self.waiting_queue.append({
+                "process": process,
+                "device": device_name,
+                "time": device_time
+            })
             return False
 
-    def release_device(self, process_id: str) -> bool:
+    def release_device(self, process_id: int) -> bool:
         """
         释放设备
         Args:
@@ -49,19 +62,41 @@ class DeviceManager:
         if process_id not in self.allocation_table:
             return False
 
-        device_name = self.allocation_table.pop(process_id)
+        info = self.allocation_table.pop(process_id)
+        device_name = info['device']
+        process = info['process']
         device = self.devices[device_name]
         device.available_count += 1
+        # 设置阻塞为None
+        process.waiting_for = None
 
         # 从等待队列中查找，如果有正在等待的进程，那么让他上来
-        for i, (waiting_process_id, waiting_device_name) in enumerate(self.waiting_queue):
+        for i, info in enumerate(self.waiting_queue):
+            waiting_device_name = info['device']
+            waiting_process = info['process']
+
             if waiting_device_name == device_name and device.available_count > 0:
                 device.available_count -= 1
-                self.allocation_table[waiting_process_id] = waiting_device_name
-                self.waiting_queue.remove((waiting_process_id, waiting_device_name))
+                self.allocation_table[waiting_process.pid] = info
+                self.waiting_queue.remove(info)
                 break
 
         return True
+
+    def schedule_device(self):
+        release_list = []
+        for info in self.allocation_table.values():
+            process = info['process']
+            info['time'] -= 1
+
+            if info['time'] <= 0:
+                release_list.append(process.pid)
+                # self.release_device(process.pid)
+            else:
+                self.allocation_table[process.pid] = info
+
+        for pid in release_list:
+            self.release_device(pid)
 
     def print_status(self):
         print("设备状态：")
@@ -73,3 +108,7 @@ class DeviceManager:
         print("Waiting Queue:")
         for process_id, device_name in self.waiting_queue:
             print(f"进程 {process_id} 正在等待 {device_name}")
+
+
+# 单实例导出
+deviceService = DeviceManager()

@@ -137,8 +137,8 @@ class Disk:
         """ docstrings
         通过目录项名查找目录项
         Args:
+            name: 待查找的文件名
             block: 磁盘块号
-            name：待查找的文件名
 
         Returns:
             参数1：目录项相对于磁盘块的偏移量
@@ -152,7 +152,8 @@ class Disk:
                 return i, self.parse_directory_entry(entry)
         return None, None
 
-    def parse_directory_entry(self, entry):
+    @staticmethod
+    def parse_directory_entry(entry):
         filename = entry[:3].strip(b'\x00').decode()
         ext = entry[3:4].decode()
         attr = entry[4]
@@ -314,13 +315,14 @@ class Disk:
 
     def run_executable(self, path):
         # 解析路径并找到可执行文件内容
-        dir_block, entry_offset = self.find_directory_entry(path)
+        dir_block, entry_offset, entry = self.find_directory_entry(path)
         if dir_block is None:
             print(f"File not found: {path}")
             return
-        dir_entry = self.read_directory_entry(dir_block, entry_offset)
-        start_block = dir_entry["start_block"]
-        length = dir_entry["length"]
+        if self.is_dir(entry):
+            return "Can't execute directory."
+        start_block = entry["start_block"]
+        length = entry["length"]
 
         # 读取可执行文件内容
         content = b''
@@ -329,8 +331,13 @@ class Disk:
             content += system_io.read_block(current_block)
             current_block = self._fat.get_next_block(current_block)
         content = content[:length].decode()
+        content.replace('\n', ' ')
+        content = content.split(' ')
+        content = list(filter(None, content))
 
-        # TODO 调用处理器部分实现运行
+        from os_backend.logic.process_manager.schedule import create
+        create(content, path)
+
         return
 
     def list_directory(self, path):
@@ -377,7 +384,7 @@ class Disk:
             elif args[0] == "rmdir":
                 self.rmdir(args[1])
             elif args[0] == "ls":
-                self.list_directory(args[1] if len(args) > 1 else '\\')
+                print(self.list_directory(args[1] if len(args) > 1 else '\\'))
             elif args[0] == "run":
                 self.run_executable(args[1])
             elif args[0] == "exit":
