@@ -6,7 +6,7 @@ text = {
         'disk.success': 'Success',
 
         # 文件操作信息
-        'disk.dir_not_found': 'Directory not found',
+        'disk.directory_not_found': 'Directory not found',
         'disk.file_already_exists': 'File already exists',
         'disk.file_created': 'File created',
         'disk.file_not_found': 'File not found',
@@ -15,6 +15,7 @@ text = {
 
         'disk.parent_directory_not_found': 'Parent directory not found',
         'disk.directory_already_exists': 'Directory already exists',
+        'disk.directory_not_empty': 'Directory not empty',
 
         # move
         'disk.illegal_move': 'Illegal move',

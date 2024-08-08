@@ -44,7 +44,7 @@ class Disk:
         # 解析路径并找到父目录块
         block, _, entry = self.find_directory_entry(path, ENTRY_FILE)
         if not block:
-            return text.get_text('disk.dir_not_found') + f':{path}'
+            return text.get_text('disk.directory_not_found') + f':{path}'
 
         if entry:
             return text.get_text('disk.file_already_exists') + f':{path}'
@@ -68,7 +68,7 @@ class Disk:
 
             return text.get_text('disk.file_created')
 
-    def delete_file(self, path) -> bool:
+    def delete_file(self, path) -> (bool, str):
         """
         删除文件
         Args:
@@ -79,15 +79,10 @@ class Disk:
         """
         # 解析路径并找到文件目录项
         if not path.endswith('.e'):
-            return False
+            return False, text.get_text('disk.file_not_found') + f':{path}'
         dir_block, entry_offset, dir_entry = self.find_directory_entry(path, ENTRY_FILE)
         if dir_block is None:
-            print(f"File not found: {path}")
-            return False
-
-        if dir_entry is None or self.is_dir(dir_entry):
-            print("could not delete directory")
-            return False
+            return False, text.get_text('disk.file_not_found') + f':{path}'
 
         # 读取目录项，获取文件起始块
         dir_entry = self.read_directory_entry(dir_block, entry_offset)
@@ -98,7 +93,7 @@ class Disk:
 
         # 删除目录项
         self.delete_directory_entry(dir_block, entry_offset)
-        return True
+        return True, text.get_text('disk.success')
 
     def find_directory_entry(self, path, ext):
         """
@@ -228,12 +223,11 @@ class Disk:
         block_data[entry_offset:entry_offset + DIRECTORY_ENTRY_SIZE] = b'\x00' * DIRECTORY_ENTRY_SIZE
         system_io.write_block(dir_block, block_data)
 
-    def type_file(self, path):
+    def type_file(self, path: str) -> (bool, str):
         # 解析路径并找到文件目录项
         dir_block, entry_offset, dir_entry = self.find_directory_entry(path, ENTRY_FILE)
         if dir_block is None or self.is_dir(dir_entry):
-            print(f"File not found: {path}")
-            return
+            return False, text.get_text('disk.file_not_found')
 
         start_block = dir_entry["start_block"]
         length = dir_entry["length"]
@@ -244,7 +238,7 @@ class Disk:
         while current_block != 0xFF:
             content += system_io.read_block(current_block)
             current_block = self._fat.get_next_block(current_block)
-        print(content[:length].decode())
+        return True, content[:length].decode()
 
     def copy_file(self, src_path: str, dest_path: str) -> str:
         """
@@ -297,22 +291,20 @@ class Disk:
 
         # 初始化新目录块
         system_io.write_block(blocks[0], b'\x00' * BLOCK_SIZE)
-        return ''
+        return text.get_text('disk.success')
 
-    def rmdir(self, path):
+    def rmdir(self, path: str) -> str:
         # 解析路径并找到目录项
         dir_block, entry_offset, _ = self.find_directory_entry(path, ENTRY_DIRECTORY)
         if dir_block is None:
-            print(f"Directory not found: {path}")
-            return
+            return text.get_text('disk.directory_not_found')
 
         # 检查目录是否为空
         dir_entry = self.read_directory_entry(dir_block, entry_offset)
         start_block = dir_entry["start_block"]
         block_data = system_io.read_block(start_block)
         if any(block_data[i:i + OFFSET_FILENAME] != b'\x00\x00\x00' for i in range(0, BLOCK_SIZE, DIRECTORY_ENTRY_SIZE)):
-            print(f"Directory not empty: {path}")
-            return
+            return text.get_text('disk.directory_not_empty')
 
         # 释放目录占用的磁盘块
         self._fat.free_blocks(start_block)
@@ -320,14 +312,12 @@ class Disk:
         # 删除目录项
         self.delete_directory_entry(dir_block, entry_offset)
 
-    def run_executable(self, path):
+    def run_executable(self, path) -> (bool, str):
         # 解析路径并找到可执行文件内容
         dir_block, entry_offset, entry = self.find_directory_entry(path, ENTRY_FILE)
         if dir_block is None:
-            print(f"File not found: {path}")
-            return
-        if self.is_dir(entry):
-            return "Can't execute directory."
+            return False, text.get_text('disk.file_not_found')
+
         start_block = entry["start_block"]
         length = entry["length"]
 
@@ -349,7 +339,7 @@ class Disk:
         from os_backend.logic.process_manager.schedule import create
         create(content, path)
 
-        return
+        return True, text.get_text('disk.success')
 
     def get_file_list(self, path: str) -> list or None:
         """
