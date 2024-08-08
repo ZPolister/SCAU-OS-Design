@@ -93,7 +93,7 @@ class Disk:
 
         # 删除目录项
         self.delete_directory_entry(dir_block, entry_offset)
-        return True, text.get_text('disk.success')
+        return True, text.get_text('success')
 
     def find_directory_entry(self, path, ext):
         """
@@ -291,7 +291,7 @@ class Disk:
 
         # 初始化新目录块
         system_io.write_block(blocks[0], b'\x00' * BLOCK_SIZE)
-        return text.get_text('disk.success')
+        return text.get_text('success')
 
     def rmdir(self, path: str) -> str:
         # 解析路径并找到目录项
@@ -339,7 +339,7 @@ class Disk:
         from os_backend.logic.process_manager.schedule import create
         create(content, path)
 
-        return True, text.get_text('disk.success')
+        return True, text.get_text('success')
 
     def get_file_list(self, path: str) -> list or None:
         """
@@ -484,7 +484,7 @@ class Disk:
         bytes_block = system_io.read_block(block)
         bytes_block[offset * DIRECTORY_ENTRY_SIZE + OFFSET_ATTRIBUTES - 1] = attribute.encode()
         system_io.write_block(block, bytes_block)
-        return text.get_text('disk.success')
+        return text.get_text('success')
 
     def command_interface(self):
         while True:

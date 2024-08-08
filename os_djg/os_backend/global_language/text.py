@@ -3,7 +3,7 @@ Global Language
 """
 text = {
     'en': {
-        'disk.success': 'Success',
+        'success': 'Success',
 
         # 文件操作信息
         'disk.directory_not_found': 'Directory not found',
@@ -31,7 +31,7 @@ text = {
     },
 
     'zh': {
-        'disk.success': '成功',
+        'success': '成功',
 
         # 文件操作信息
         'disk.directory_not_found': '目录未找到',
@@ -58,7 +58,7 @@ text = {
     },
 
     'jp': {
-        'disk.success': '成功',
+        'success': '成功',
 
         # ファイル操作情報
         'disk.directory_not_found': 'ディレクトリが見つかりません',
