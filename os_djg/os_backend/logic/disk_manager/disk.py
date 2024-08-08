@@ -160,11 +160,11 @@ class Disk:
 
     @staticmethod
     def parse_directory_entry(entry):
-        filename = entry[:3].strip(b'\x00').decode()
-        ext = entry[3:4].decode()
-        attr = entry[4]
-        start_block = entry[5]
-        length = struct.unpack('<H', entry[6:8])[0]
+        filename = entry[:OFFSET_FILENAME].strip(b'\x00').decode()
+        ext = entry[OFFSET_FILENAME:OFFSET_EXTENSION].decode()
+        attr = entry[OFFSET_EXTENSION:OFFSET_ATTRIBUTES].decode()
+        start_block = int.from_bytes(entry[OFFSET_ATTRIBUTES:OFFSET_START_BLOCK])
+        length = struct.unpack('<H', entry[OFFSET_START_BLOCK:OFFSET_LENGTH])[0]
         return {
             "filename": filename,
             "ext": ext,
@@ -177,7 +177,7 @@ class Disk:
         """
         创建一个目录项
         """
-        filename = filename.ljust(3, '\x00').encode()
+        filename = filename.ljust(OFFSET_FILENAME, '\x00').encode()
         ext = ext.ljust(1, '\x00').encode()
         attr = 0  # 0 表示普通文件
         start_block = struct.pack('<B', start_block)
@@ -197,7 +197,7 @@ class Disk:
         while parent_dir_block != FAT_EOF:
             block_data = bytearray(system_io.read_block(parent_dir_block))
             for i in range(0, len(block_data), DIRECTORY_ENTRY_SIZE):
-                if block_data[i:i + 3] == b'\x00\x00\x00':  # 找到一个空目录项
+                if block_data[i:i + OFFSET_FILENAME] == b'\x00\x00\x00':  # 找到一个空目录项
                     block_data[i:i + DIRECTORY_ENTRY_SIZE] = dir_entry
                     system_io.write_block(parent_dir_block, block_data)
                     return True
@@ -310,7 +310,7 @@ class Disk:
         dir_entry = self.read_directory_entry(dir_block, entry_offset)
         start_block = dir_entry["start_block"]
         block_data = system_io.read_block(start_block)
-        if any(block_data[i:i + 3] != b'\x00\x00\x00' for i in range(0, BLOCK_SIZE, DIRECTORY_ENTRY_SIZE)):
+        if any(block_data[i:i + OFFSET_FILENAME] != b'\x00\x00\x00' for i in range(0, BLOCK_SIZE, DIRECTORY_ENTRY_SIZE)):
             print(f"Directory not empty: {path}")
             return
 
@@ -478,6 +478,23 @@ class Disk:
         """
         system_io.initialize_disk()
         self._fat.reset_fat()
+
+    def change_attribute(self, path: str, attribute: str):
+
+        if len(attribute) != 1:
+            return text.get_text('disk.illegal_attribute_value')
+
+        path = os.path.normpath(path)
+        block, offset, entry = self.find_directory_entry(path,
+                                                         ENTRY_DIRECTORY if not path.endswith('.e') else ENTRY_FILE)
+
+        if entry is None:
+            return text.get_text('disk.not_found_entry')
+
+        bytes_block = system_io.read_block(block)
+        bytes_block[offset * DIRECTORY_ENTRY_SIZE + OFFSET_ATTRIBUTES - 1] = attribute.encode()
+        system_io.write_block(block, bytes_block)
+        return text.get_text('disk.success')
 
     def command_interface(self):
         while True:

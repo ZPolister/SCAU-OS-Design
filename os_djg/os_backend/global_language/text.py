@@ -3,6 +3,8 @@ Global Language
 """
 text = {
     'en': {
+        'disk.success': 'Success',
+
         # 文件操作信息
         'disk.dir_not_found': 'Directory not found',
         'disk.file_already_exists': 'File already exists',
@@ -20,6 +22,11 @@ text = {
         'disk.not_found_dst': 'Destination not found',
         'disk.already_exists': 'File(Directory) already exists',
         'disk.move_failed': 'Move failed',
+
+        # format
+        'disk.illegal_attribute_value': 'Illegal attribute value',
+        'disk.not_found_entry': 'Entry not found',
+
     },
 
     'zh': {
@@ -36,4 +43,5 @@ def get_text(key: str):
 
 
 def set_language(lang: str):
+    global _language
     _language = lang
