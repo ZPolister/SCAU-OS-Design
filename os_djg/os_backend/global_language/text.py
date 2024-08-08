@@ -14,6 +14,12 @@ text = {
         'disk.parent_directory_not_found': 'Parent directory not found',
         'disk.directory_already_exists': 'Directory already exists',
 
+        # move
+        'disk.illegal_move': 'Illegal move',
+        'disk.not_found_src': 'Source not found',
+        'disk.not_found_dst': 'Destination not found',
+        'disk.already_exists': 'File(Directory) already exists',
+        'disk.move_failed': 'Move failed',
     },
 
     'zh': {

@@ -130,7 +130,7 @@ class Disk:
             current_block = dir_entry["start_block"]
 
         # 有文件尾缀的要去掉
-        entry_name = parts[-1] if not parts[-1].endswith('.e') else parts[-1][:-2]
+        entry_name = parts[-1] if ext != ENTRY_FILE and not parts[-1].endswith('.e') else parts[-1][:-2]
 
         entry = self.find_directory_entry_in_block(current_block, entry_name, ext)
         # 返回找到的文件目录项块号和目录项偏移量
@@ -297,6 +297,7 @@ class Disk:
 
         # 初始化新目录块
         system_io.write_block(blocks[0], b'\x00' * BLOCK_SIZE)
+        return ''
 
     def rmdir(self, path):
         # 解析路径并找到目录项
@@ -375,7 +376,7 @@ class Disk:
             return None
         dir_block = entry["start_block"] if flag != -1 else ROOT_DIR_BLOCK
 
-        # 读取目录块
+        # 读取目录块s
         block_data = b''
         while dir_block != 0xFF:
             block_data += system_io.read_block(dir_block)
@@ -400,7 +401,7 @@ class Disk:
 
         return [f"{entry['filename']}{'.' + entry['ext'] if not self.is_dir(entry) else ''}" for entry in entry_list]
 
-    def delete_directory(self, path) -> bool:
+    def delete_directory(self, path: str) -> bool:
         """
         删除目录（可以删除非空文件夹）
         Args:
@@ -427,6 +428,48 @@ class Disk:
             self.rmdir(path)
         return True
 
+    def move(self, src_path: str, dst_path: str) -> str:
+        """
+        移动文件（目录）
+        Args:
+            src_path: 源目录（文件）
+            dst_path: 目的目录（文件）
+
+        Returns:
+            提示信息
+        """
+        src_path = os.path.normpath(src_path)
+        dst_path = os.path.normpath(dst_path)
+
+        # 父文件夹移动到子文件夹内
+        if dst_path.startswith(src_path):
+            return text.get_text('disk.illegal_move')
+
+        src_block, src_offset, src_entry = self.find_directory_entry(
+            src_path, ENTRY_FILE if src_path.endswith('.e') else ENTRY_DIRECTORY)
+        if src_entry is None:
+            return text.get_text('disk.not_found_src')
+
+        _, dst_offset, dst_entry = self.find_directory_entry(dst_path, ENTRY_DIRECTORY)
+        if dst_offset != -1 and dst_entry is None:
+            return text.get_text('disk.not_found_dst')
+
+        dst_block = dst_entry["start_block"] if dst_offset != -1 else ROOT_DIR_BLOCK
+
+        # 重名检查
+        _, entry = self.find_directory_entry_in_block(dst_block, src_entry["filename"],
+                                                      ENTRY_FILE if src_path.endswith('.e') else ENTRY_DIRECTORY)
+        if entry:
+            return text.get_text('disk.already_exists')
+
+        byte_entry = self.create_directory_entry(src_entry['filename'], src_entry['ext'],
+                                                 src_entry["start_block"], src_entry["length"])
+        if not self.write_directory_entry(dst_block, byte_entry):
+            return text.get_text('disk.move_failed')
+
+        self.delete_directory_entry(src_block, src_offset)
+        return ''
+
     def command_interface(self):
         while True:
             command = input("$ ")
@@ -443,7 +486,8 @@ class Disk:
             elif args[0] == "copy":
                 self.copy_file(args[1], args[2])
             elif args[0] == "mkdir":
-                self.mkdir(args[1])
+                msg = self.mkdir(args[1])
+                print(msg)
             elif args[0] == "rmdir":
                 self.rmdir(args[1])
             elif args[0] == "ls":
@@ -452,6 +496,9 @@ class Disk:
                 self.run_executable(args[1])
             elif args[0] == "deldir":
                 self.delete_directory(args[1])
+            elif args[0] == "move":
+                msg = self.move(args[1], args[2])
+                print(msg)
             elif args[0] == "exit":
                 break
             else:
@@ -465,3 +512,6 @@ if __name__ == "__main__":
     disk = Disk()
     disk.command_interface()
     # disk.delete_directory('/')
+
+    # msg = disk.move('/d/2', '/')
+    # print(msg)
