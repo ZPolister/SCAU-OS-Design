@@ -81,7 +81,7 @@ class Disk:
         if not path.endswith('.e'):
             return False, text.get_text('disk.file_not_found') + f':{path}'
         dir_block, entry_offset, dir_entry = self.find_directory_entry(path, ENTRY_FILE)
-        if dir_block is None:
+        if dir_entry is None:
             return False, text.get_text('disk.file_not_found') + f':{path}'
 
         # 读取目录项，获取文件起始块
@@ -125,7 +125,7 @@ class Disk:
             current_block = dir_entry["start_block"]
 
         # 有文件尾缀的要去掉
-        entry_name = parts[-1] if ext != ENTRY_FILE and not parts[-1].endswith('.e') else parts[-1][:-2]
+        entry_name = parts[-1] if (ext == ENTRY_FILE) and (not parts[-1].endswith('.e')) else parts[-1][:-2]
 
         entry = self.find_directory_entry_in_block(current_block, entry_name, ext)
         # 返回找到的文件目录项块号和目录项偏移量
@@ -267,8 +267,8 @@ class Disk:
             content += system_io.read_block(current_block)
             current_block = self._fat.get_next_block(current_block)
 
-        self.create_file(os.path.join(dest_path, dir_entry["filename"]), dir_entry["ext"], content[:length])
-        return ''
+        return self.create_file(os.path.join(dest_path, dir_entry["filename"]), dir_entry["ext"], content[:length])
+
 
     def mkdir(self, path):
         path = os.path.normpath(path)
