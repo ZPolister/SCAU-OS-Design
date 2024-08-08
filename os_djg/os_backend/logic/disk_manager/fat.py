@@ -101,6 +101,11 @@ class FAT:
         self._fat_buffer[previous_block] = new_block
         self._write_fat()
 
+    def reset_fat(self):
+        self._fat_buffer = [0] * BLOCK_SIZE * FAT_SIZE
+        self._fat_buffer[0] = self._fat_buffer[1] = FAT_EOF
+        self._write_fat()
+
 
 if __name__ == '__main__':
     fat_class = FAT()

@@ -470,6 +470,15 @@ class Disk:
         self.delete_directory_entry(src_block, src_offset)
         return ''
 
+    def format(self):
+        """
+        磁盘格式化
+        Returns:
+            void
+        """
+        system_io.initialize_disk()
+        self._fat.reset_fat()
+
     def command_interface(self):
         while True:
             command = input("$ ")
