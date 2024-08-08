@@ -26,4 +26,6 @@ FAT_NULL = 0x00
 # 目录项大小
 DIRECTORY_ENTRY_SIZE = 8
 
-
+# 文件类型
+ENTRY_FILE = 'e'
+ENTRY_DIRECTORY = '\x00'
