@@ -44,7 +44,7 @@ class Disk:
         # 解析路径并找到父目录块
         block, _, entry = self.find_directory_entry(path, ENTRY_FILE)
         if not block:
-            return text.get_text('disk.dir_not_found') + f':{path}'
+            return text.get_text('disk.directory_not_found') + f':{path}'
 
         if entry:
             return text.get_text('disk.file_already_exists') + f':{path}'
@@ -68,7 +68,7 @@ class Disk:
 
             return text.get_text('disk.file_created')
 
-    def delete_file(self, path) -> bool:
+    def delete_file(self, path) -> (bool, str):
         """
         删除文件
         Args:
@@ -79,15 +79,10 @@ class Disk:
         """
         # 解析路径并找到文件目录项
         if not path.endswith('.e'):
-            return False
+            return False, text.get_text('disk.file_not_found') + f':{path}'
         dir_block, entry_offset, dir_entry = self.find_directory_entry(path, ENTRY_FILE)
-        if dir_block is None:
-            print(f"File not found: {path}")
-            return False
-
-        if dir_entry is None or self.is_dir(dir_entry):
-            print("could not delete directory")
-            return False
+        if dir_entry is None:
+            return False, text.get_text('disk.file_not_found') + f':{path}'
 
         # 读取目录项，获取文件起始块
         dir_entry = self.read_directory_entry(dir_block, entry_offset)
@@ -98,7 +93,7 @@ class Disk:
 
         # 删除目录项
         self.delete_directory_entry(dir_block, entry_offset)
-        return True
+        return True, text.get_text('success')
 
     def find_directory_entry(self, path, ext):
         """
@@ -130,7 +125,7 @@ class Disk:
             current_block = dir_entry["start_block"]
 
         # 有文件尾缀的要去掉
-        entry_name = parts[-1] if not parts[-1].endswith('.e') else parts[-1][:-2]
+        entry_name = parts[-1] if (ext == ENTRY_FILE) and (not parts[-1].endswith('.e')) else parts[-1][:-2]
 
         entry = self.find_directory_entry_in_block(current_block, entry_name, ext)
         # 返回找到的文件目录项块号和目录项偏移量
@@ -160,11 +155,11 @@ class Disk:
 
     @staticmethod
     def parse_directory_entry(entry):
-        filename = entry[:3].strip(b'\x00').decode()
-        ext = entry[3:4].decode()
-        attr = entry[4]
-        start_block = entry[5]
-        length = struct.unpack('<H', entry[6:8])[0]
+        filename = entry[:OFFSET_FILENAME].strip(b'\x00').decode()
+        ext = entry[OFFSET_FILENAME:OFFSET_EXTENSION].decode()
+        attr = entry[OFFSET_EXTENSION:OFFSET_ATTRIBUTES].decode()
+        start_block = int.from_bytes(entry[OFFSET_ATTRIBUTES:OFFSET_START_BLOCK])
+        length = struct.unpack('<H', entry[OFFSET_START_BLOCK:OFFSET_LENGTH])[0]
         return {
             "filename": filename,
             "ext": ext,
@@ -177,7 +172,7 @@ class Disk:
         """
         创建一个目录项
         """
-        filename = filename.ljust(3, '\x00').encode()
+        filename = filename.ljust(OFFSET_FILENAME, '\x00').encode()
         ext = ext.ljust(1, '\x00').encode()
         attr = 0  # 0 表示普通文件
         start_block = struct.pack('<B', start_block)
@@ -197,7 +192,7 @@ class Disk:
         while parent_dir_block != FAT_EOF:
             block_data = bytearray(system_io.read_block(parent_dir_block))
             for i in range(0, len(block_data), DIRECTORY_ENTRY_SIZE):
-                if block_data[i:i + 3] == b'\x00\x00\x00':  # 找到一个空目录项
+                if block_data[i:i + OFFSET_FILENAME] == b'\x00\x00\x00':  # 找到一个空目录项
                     block_data[i:i + DIRECTORY_ENTRY_SIZE] = dir_entry
                     system_io.write_block(parent_dir_block, block_data)
                     return True
@@ -228,12 +223,11 @@ class Disk:
         block_data[entry_offset:entry_offset + DIRECTORY_ENTRY_SIZE] = b'\x00' * DIRECTORY_ENTRY_SIZE
         system_io.write_block(dir_block, block_data)
 
-    def type_file(self, path):
+    def type_file(self, path: str) -> (bool, str):
         # 解析路径并找到文件目录项
         dir_block, entry_offset, dir_entry = self.find_directory_entry(path, ENTRY_FILE)
         if dir_block is None or self.is_dir(dir_entry):
-            print(f"File not found: {path}")
-            return
+            return False, text.get_text('disk.file_not_found')
 
         start_block = dir_entry["start_block"]
         length = dir_entry["length"]
@@ -244,7 +238,7 @@ class Disk:
         while current_block != 0xFF:
             content += system_io.read_block(current_block)
             current_block = self._fat.get_next_block(current_block)
-        print(content[:length].decode())
+        return True, content[:length].decode()
 
     def copy_file(self, src_path: str, dest_path: str) -> str:
         """
@@ -273,8 +267,8 @@ class Disk:
             content += system_io.read_block(current_block)
             current_block = self._fat.get_next_block(current_block)
 
-        self.create_file(os.path.join(dest_path, dir_entry["filename"]), dir_entry["ext"], content[:length])
-        return ''
+        return self.create_file(os.path.join(dest_path, dir_entry["filename"]), dir_entry["ext"], content[:length])
+
 
     def mkdir(self, path):
         path = os.path.normpath(path)
@@ -297,21 +291,20 @@ class Disk:
 
         # 初始化新目录块
         system_io.write_block(blocks[0], b'\x00' * BLOCK_SIZE)
+        return text.get_text('success')
 
-    def rmdir(self, path):
+    def rmdir(self, path: str) -> str:
         # 解析路径并找到目录项
         dir_block, entry_offset, _ = self.find_directory_entry(path, ENTRY_DIRECTORY)
         if dir_block is None:
-            print(f"Directory not found: {path}")
-            return
+            return text.get_text('disk.directory_not_found')
 
         # 检查目录是否为空
         dir_entry = self.read_directory_entry(dir_block, entry_offset)
         start_block = dir_entry["start_block"]
         block_data = system_io.read_block(start_block)
-        if any(block_data[i:i + 3] != b'\x00\x00\x00' for i in range(0, BLOCK_SIZE, DIRECTORY_ENTRY_SIZE)):
-            print(f"Directory not empty: {path}")
-            return
+        if any(block_data[i:i + OFFSET_FILENAME] != b'\x00\x00\x00' for i in range(0, BLOCK_SIZE, DIRECTORY_ENTRY_SIZE)):
+            return text.get_text('disk.directory_not_empty')
 
         # 释放目录占用的磁盘块
         self._fat.free_blocks(start_block)
@@ -319,14 +312,12 @@ class Disk:
         # 删除目录项
         self.delete_directory_entry(dir_block, entry_offset)
 
-    def run_executable(self, path):
+    def run_executable(self, path) -> (bool, str):
         # 解析路径并找到可执行文件内容
         dir_block, entry_offset, entry = self.find_directory_entry(path, ENTRY_FILE)
         if dir_block is None:
-            print(f"File not found: {path}")
-            return
-        if self.is_dir(entry):
-            return "Can't execute directory."
+            return False, text.get_text('disk.file_not_found')
+
         start_block = entry["start_block"]
         length = entry["length"]
 
@@ -348,7 +339,7 @@ class Disk:
         from os_backend.logic.process_manager.schedule import create
         create(content, path)
 
-        return
+        return True, text.get_text('success')
 
     def get_file_list(self, path: str) -> list or None:
         """
@@ -375,7 +366,7 @@ class Disk:
             return None
         dir_block = entry["start_block"] if flag != -1 else ROOT_DIR_BLOCK
 
-        # 读取目录块
+        # 读取目录块s
         block_data = b''
         while dir_block != 0xFF:
             block_data += system_io.read_block(dir_block)
@@ -400,7 +391,7 @@ class Disk:
 
         return [f"{entry['filename']}{'.' + entry['ext'] if not self.is_dir(entry) else ''}" for entry in entry_list]
 
-    def delete_directory(self, path) -> bool:
+    def delete_directory(self, path: str) -> bool:
         """
         删除目录（可以删除非空文件夹）
         Args:
@@ -427,6 +418,74 @@ class Disk:
             self.rmdir(path)
         return True
 
+    def move(self, src_path: str, dst_path: str) -> str:
+        """
+        移动文件（目录）
+        Args:
+            src_path: 源目录（文件）
+            dst_path: 目的目录（文件）
+
+        Returns:
+            提示信息
+        """
+        src_path = os.path.normpath(src_path)
+        dst_path = os.path.normpath(dst_path)
+
+        # 父文件夹移动到子文件夹内
+        if dst_path.startswith(src_path):
+            return text.get_text('disk.illegal_move')
+
+        src_block, src_offset, src_entry = self.find_directory_entry(
+            src_path, ENTRY_FILE if src_path.endswith('.e') else ENTRY_DIRECTORY)
+        if src_entry is None:
+            return text.get_text('disk.not_found_src')
+
+        _, dst_offset, dst_entry = self.find_directory_entry(dst_path, ENTRY_DIRECTORY)
+        if dst_offset != -1 and dst_entry is None:
+            return text.get_text('disk.not_found_dst')
+
+        dst_block = dst_entry["start_block"] if dst_offset != -1 else ROOT_DIR_BLOCK
+
+        # 重名检查
+        _, entry = self.find_directory_entry_in_block(dst_block, src_entry["filename"],
+                                                      ENTRY_FILE if src_path.endswith('.e') else ENTRY_DIRECTORY)
+        if entry:
+            return text.get_text('disk.already_exists')
+
+        byte_entry = self.create_directory_entry(src_entry['filename'], src_entry['ext'],
+                                                 src_entry["start_block"], src_entry["length"])
+        if not self.write_directory_entry(dst_block, byte_entry):
+            return text.get_text('disk.move_failed')
+
+        self.delete_directory_entry(src_block, src_offset)
+        return ''
+
+    def format(self):
+        """
+        磁盘格式化
+        Returns:
+            void
+        """
+        system_io.initialize_disk()
+        self._fat.reset_fat()
+
+    def change_attribute(self, path: str, attribute: str):
+
+        if len(attribute) != 1:
+            return text.get_text('disk.illegal_attribute_value')
+
+        path = os.path.normpath(path)
+        block, offset, entry = self.find_directory_entry(path,
+                                                         ENTRY_DIRECTORY if not path.endswith('.e') else ENTRY_FILE)
+
+        if entry is None:
+            return text.get_text('disk.not_found_entry')
+
+        bytes_block = system_io.read_block(block)
+        bytes_block[offset * DIRECTORY_ENTRY_SIZE + OFFSET_ATTRIBUTES - 1] = attribute.encode()
+        system_io.write_block(block, bytes_block)
+        return text.get_text('success')
+
     def command_interface(self):
         while True:
             command = input("$ ")
@@ -443,7 +502,8 @@ class Disk:
             elif args[0] == "copy":
                 self.copy_file(args[1], args[2])
             elif args[0] == "mkdir":
-                self.mkdir(args[1])
+                msg = self.mkdir(args[1])
+                print(msg)
             elif args[0] == "rmdir":
                 self.rmdir(args[1])
             elif args[0] == "ls":
@@ -452,6 +512,9 @@ class Disk:
                 self.run_executable(args[1])
             elif args[0] == "deldir":
                 self.delete_directory(args[1])
+            elif args[0] == "move":
+                msg = self.move(args[1], args[2])
+                print(msg)
             elif args[0] == "exit":
                 break
             else:
@@ -465,3 +528,6 @@ if __name__ == "__main__":
     disk = Disk()
     disk.command_interface()
     # disk.delete_directory('/')
+
+    # msg = disk.move('/d/2', '/')
+    # print(msg)
