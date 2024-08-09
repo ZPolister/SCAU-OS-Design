@@ -13,9 +13,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
+import os_backend.routing
 from os_backend import views
 
 urlpatterns = [
@@ -30,4 +30,7 @@ urlpatterns = [
     path("run", views.cmd_run, name="run"),
     path("deldir", views.cmd_deldir, name="deldir"),
     path("move", views.cmd_move, name="move"),
+
+    # websocket
+    path('ws/os_process_ws/', include(os_backend.routing.websocket_urlpatterns)),
 ]

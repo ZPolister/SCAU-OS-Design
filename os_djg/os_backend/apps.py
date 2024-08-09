@@ -10,6 +10,4 @@ class OsBackendConfig(AppConfig):
     name = "os_backend"
 
     def ready(self):
-        if not hasattr(self, 'started'):
-            threading.Thread(target=schedule.system_timer).start()
-            self.started = True  # 避免重复启动
+        threading.Thread(target=schedule.system_timer).start()

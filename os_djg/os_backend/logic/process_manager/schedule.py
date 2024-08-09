@@ -1,10 +1,13 @@
-# 全局寄存器和变量
 import threading
 import time
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 from os_backend.logic.process_manager.process_constant import *
 from os_backend.logic.process_manager.pcb import PCB
 
+# 全局寄存器和变量
 IR = ""  # 指令寄存器
 PSW = 0  # 程序状态字
 PC = 0  # 程序计数器
@@ -186,6 +189,24 @@ def system_timer():
         CPU()
         time.sleep(1)
         system_clock += 1
+
+        # 发送消息到 WebSocket
+        message = {
+            'type': 'system_timer',
+            'system_clock': system_clock,
+        }
+
+        # 获取通道层
+        channel_layer = get_channel_layer()
+
+        # 向所有连接的客户端发送消息
+        async_to_sync(channel_layer.group_send)(
+            'system_timer_group',
+            {
+                'type': 'send_timer_message',
+                'message': message,
+            }
+        )
 
         # 更新阻塞队列中的进程时间
         from os_backend.logic.device_manager.device_manager import deviceService

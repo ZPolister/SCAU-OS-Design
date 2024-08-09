@@ -87,7 +87,7 @@ text = {
 }
 
 default_language = 'en'
-_language = 'zh'
+_language = 'jp'
 
 
 def get_text(key: str):
