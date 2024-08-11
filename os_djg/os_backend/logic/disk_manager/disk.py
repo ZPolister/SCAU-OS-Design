@@ -57,7 +57,9 @@ class Disk:
 
         # 创建目录项
         dir_entry = self.create_directory_entry(filename, ext, blocks[0], len(content))
-        self.write_directory_entry(block, dir_entry)
+        if not self.write_directory_entry(block, dir_entry):
+            self._fat.free_blocks(blocks[0])
+            return text.get_text('disk.not_enough_space')
 
         # 写入文件内容到磁盘块
         for i in range(needed_blocks):
@@ -125,7 +127,7 @@ class Disk:
             current_block = dir_entry["start_block"]
 
         # 有文件尾缀的要去掉
-        entry_name = parts[-1] if (ext == ENTRY_FILE) and (not parts[-1].endswith('.e')) else parts[-1][:-2]
+        entry_name = parts[-1][:-2] if (ext == ENTRY_FILE) and (parts[-1].endswith('.e')) else parts[-1]
 
         entry = self.find_directory_entry_in_block(current_block, entry_name, ext)
         # 返回找到的文件目录项块号和目录项偏移量

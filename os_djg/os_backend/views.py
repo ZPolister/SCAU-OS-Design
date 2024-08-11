@@ -209,6 +209,7 @@ def cmd_format(request):
             没有参数，直接请求即可
     """
     DiskService.format()
+    return JsonResponse(response_format_data())
 
 
 @csrf_exempt
