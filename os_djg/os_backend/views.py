@@ -211,6 +211,7 @@ def cmd_format(request):
     DiskService.format()
 
 
+@csrf_exempt
 def cmd_change_attribute(request):
     """
     修改文件（目录）属性
@@ -232,6 +233,7 @@ def cmd_change_attribute(request):
     return JsonResponse(response_format_data(msg=result))
 
 
+@csrf_exempt
 def cmd_change_language(request):
     """
     修改信息语言
