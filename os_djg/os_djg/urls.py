@@ -30,4 +30,7 @@ urlpatterns = [
     path("run", views.cmd_run, name="run"),
     path("deldir", views.cmd_deldir, name="deldir"),
     path("move", views.cmd_move, name="move"),
+    path("format", views.cmd_format, name="format"),
+    path("change_attribute", views.cmd_change_attribute, name="change_attribute"),
+    path("change_language", views.cmd_change_language, name="change_language"),
 ]

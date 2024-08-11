@@ -469,7 +469,7 @@ class Disk:
         system_io.initialize_disk()
         self._fat.reset_fat()
 
-    def change_attribute(self, path: str, attribute: str):
+    def change_attribute(self, path: str, attribute: str) -> str:
 
         if len(attribute) != 1:
             return text.get_text('disk.illegal_attribute_value')

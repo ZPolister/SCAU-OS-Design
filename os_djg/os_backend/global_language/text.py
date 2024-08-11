@@ -4,6 +4,7 @@ Global Language
 text = {
     'en': {
         'success': 'Success',
+        'error': 'Error',
 
         # 文件操作信息
         'disk.directory_not_found': 'Directory not found',
@@ -32,6 +33,7 @@ text = {
 
     'zh': {
         'success': '成功',
+        'error': "操作失败",
 
         # 文件操作信息
         'disk.directory_not_found': '目录未找到',
@@ -59,6 +61,7 @@ text = {
 
     'jp': {
         'success': '成功',
+        'error': '操作に失敗します',
 
         # ファイル操作情報
         'disk.directory_not_found': 'ディレクトリが見つかりません',
