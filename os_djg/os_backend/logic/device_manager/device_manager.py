@@ -29,25 +29,23 @@ class DeviceManager:
             print(f"Device {device_name} does not exist.")
             return False
 
-        print(process.instructions)
+        # print(process.instructions)
         process_id = process.pid
         device = self.devices[device_name]
+        request_info = {
+            "process": process,
+            "device": device_name,
+            "time": device_time,
+            "waiting_time": 0
+        }
         if device.available_count > 0:
             device.available_count -= 1
-            self.allocation_table[process_id] = {
-                "process": process,
-                "device": device_name,
-                "time": device_time
-            }
+            self.allocation_table[process_id] = request_info
             print(f"设备 {device_name} 分配给 {process_id}")
             return True
         else:
             print(f"设备 {device_name} 不足. 进程 {process_id} 进入等待队列")
-            self.waiting_queue.append({
-                "process": process,
-                "device": device_name,
-                "time": device_time
-            })
+            self.waiting_queue.append(request_info)
             return False
 
     def release_device(self, process_id: int) -> bool:
@@ -83,11 +81,39 @@ class DeviceManager:
 
         return True
 
+    def get_device_condition(self):
+        return {
+            'device_status': [
+                {
+                    'device_name': device.name,
+                    'device_total_count': device.total_count,
+                    'device_available_count': device.available_count
+                }
+                for device in self.devices.values()
+            ],
+            'allocation_status': [
+                {
+                    'process_id': process_id,
+                    'device_name': process_info['device']
+                }
+                for process_id, process_info in self.allocation_table.items()
+            ],
+            'waiting_status': [
+                {
+                    'process_id': process_id,
+                    'device_name': device_name,
+                    'waiting_time': waiting_time
+                }
+                for process_id, device_name, _, waiting_time in self.waiting_queue
+            ]
+        }
+
     def schedule_device(self):
         release_list = []
         for info in self.allocation_table.values():
             process = info['process']
             info['time'] -= 1
+            info['waiting_time'] += 1
 
             if info['time'] <= 0:
                 release_list.append(process.pid)

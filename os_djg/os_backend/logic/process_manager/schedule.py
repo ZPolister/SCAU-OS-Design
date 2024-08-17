@@ -1,10 +1,13 @@
-# 全局寄存器和变量
 import threading
 import time
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 from os_backend.logic.process_manager.process_constant import *
 from os_backend.logic.process_manager.pcb import PCB
 
+# 全局寄存器和变量
 IR = ""  # 指令寄存器
 PSW = 0  # 程序状态字
 PC = 0  # 程序计数器
@@ -155,6 +158,7 @@ def CPU():
         if PSW != 0:
             handle_interrupt()
     else:
+        IR = ''
         print(f'{system_clock}: {running_process.pid}-No Process Running')
         schedule()
 
@@ -184,11 +188,53 @@ def system_timer():
         time.sleep(1)
         system_clock += 1
 
+        # 发送消息到 WebSocket
+        message = {
+            'type': 'system_timer',
+            'system_clock': system_clock,
+        }
+
+        # 获取通道层
+        channel_layer = get_channel_layer()
+
+        # 向所有连接的客户端发送消息
+        async_to_sync(channel_layer.group_send)(
+            'system_timer_group',
+            {
+                'type': 'send_timer_message',
+                'message': get_message_info(),
+            }
+        )
+
         # 更新阻塞队列中的进程时间
         from os_backend.logic.device_manager.device_manager import deviceService
         deviceService.schedule_device()
 
         awake()
+
+
+def get_message_info():
+    """
+    返回样式预览：
+       见目录下process_message_info.md文件
+    """
+    from os_backend.logic.device_manager.device_manager import deviceService
+    from os_backend.logic.memory_manager.memory_manager import memoryService
+    from os_backend.logic.disk_manager.disk import DiskService
+    return {
+        'message_type': 'process_info',  # 消息类型，通过这项辨别是进程信息
+        'system_clock': system_clock,  # 系统时间
+        'now_process_id': running_process.pid,  # 现在运行的进程ID
+        'relative_clock': relative_clock,  # 时间片
+        'now_value': x,  # 现在寄存器的值
+        'now_ir': IR,  # 现在执行的指令
+        'ready_queue': [process.pid for process in ready_queue],  # 就绪进程id
+        'total_memory': memoryService.total_memory,  # 总内存
+        'user_memory': memoryService.user_memory,  # 用户区内存总数
+        'user_memory_condition': memoryService.get_memory_condition(),  # 用户区内存使用情况
+        'disk_usage': DiskService.get_disk_usage(),  # 磁盘块使用情况（记录使用的块号）
+        'device_condition': deviceService.get_device_condition()  # 设备情况
+    }
 
 
 if '__main__' == __name__:
