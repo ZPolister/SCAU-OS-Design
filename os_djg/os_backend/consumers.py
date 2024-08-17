@@ -7,7 +7,9 @@ class ProcessManagerConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
 
-        await self.send(text_data=json.dumps({"message": "connected"}))
+        await self.send(text_data=json.dumps({
+            "message_type": "connected"
+        }))
         print(self.channel_layer)
         # 加入组
         await self.channel_layer.group_add(
@@ -23,6 +25,9 @@ class ProcessManagerConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data=None, bytes_data=None):
+        await self.send(text_data=json.dumps({
+            "message_type": "heart_keep"
+        }))  # 心跳
         pass
 
     async def send_timer_message(self, event):

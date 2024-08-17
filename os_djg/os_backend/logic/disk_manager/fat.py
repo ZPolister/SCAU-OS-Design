@@ -106,6 +106,9 @@ class FAT:
         self._fat_buffer[0] = self._fat_buffer[1] = self._fat_buffer[2] = FAT_EOF
         self._write_fat()
 
+    def get_fat_condition(self) -> list:
+        return [i for i, block in enumerate(self._fat_buffer) if block != FAT_NULL]
+
 
 if __name__ == '__main__':
     fat_class = FAT()

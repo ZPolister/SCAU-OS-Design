@@ -111,7 +111,7 @@ class MemoryManager:
                 "allocated": True
             })
 
-        return self.total_memory, self.system_memory, memory_blocks
+        return memory_blocks
 
 
 memoryService = MemoryManager()

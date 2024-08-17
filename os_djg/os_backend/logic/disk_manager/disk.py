@@ -317,7 +317,7 @@ class Disk:
     def run_executable(self, path) -> (bool, str):
         # 解析路径并找到可执行文件内容
         dir_block, entry_offset, entry = self.find_directory_entry(path, ENTRY_FILE)
-        if dir_block is None:
+        if entry is None:
             return False, text.get_text('disk.file_not_found')
 
         start_block = entry["start_block"]
@@ -487,6 +487,9 @@ class Disk:
         bytes_block[offset * DIRECTORY_ENTRY_SIZE + OFFSET_ATTRIBUTES - 1] = attribute.encode()
         system_io.write_block(block, bytes_block)
         return text.get_text('success')
+
+    def get_disk_usage(self) -> list:
+        return self._fat.get_fat_condition()
 
     def command_interface(self):
         while True:
