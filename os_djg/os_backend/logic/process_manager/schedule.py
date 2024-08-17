@@ -144,9 +144,6 @@ def CPU():
             x -= 1
         elif IR.startswith('!'):
             PSW = PROCESS_IO
-            PC += 1
-            handle_interrupt()
-            return
         elif IR == 'end':
             PSW = PROCESS_END
 
@@ -154,7 +151,7 @@ def CPU():
         relative_clock -= 1
 
         # 时间片到点
-        if relative_clock <= 0:
+        if relative_clock <= 0 and PSW == 0:
             PSW = PROCESS_TIMEOUT  # 设置时间片中断
 
         # 检查中断

@@ -102,8 +102,8 @@ class FAT:
         self._write_fat()
 
     def reset_fat(self):
-        self._fat_buffer = [0] * BLOCK_SIZE * FAT_SIZE
-        self._fat_buffer[0] = self._fat_buffer[1] = FAT_EOF
+        self._fat_buffer = [0] * FAT_SIZE
+        self._fat_buffer[0] = self._fat_buffer[1] = self._fat_buffer[2] = FAT_EOF
         self._write_fat()
 
 
