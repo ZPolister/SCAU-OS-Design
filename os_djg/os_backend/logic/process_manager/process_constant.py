@@ -11,3 +11,6 @@ PROCESS_IO = 3  # IO中断
 
 # 时间片长度
 TIME_SLICE = 5
+
+# 运行结果文件
+RESULT_FILE_NAME = 'result.txt'
