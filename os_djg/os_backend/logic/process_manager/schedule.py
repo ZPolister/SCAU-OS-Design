@@ -63,12 +63,13 @@ def create(instructions: list[str], path: str) -> int or None:
 
     # 申请内存，内存不足时无法运行
     from os_backend.logic.memory_manager.memory_manager import memoryService
-    start_pos = memoryService.allocate_memory(sum(len(item) for item in instructions))
-    if start_pos is None:
+    allocated_block = memoryService.allocate_memory(sum(len(item) for item in instructions))
+    if allocated_block is None:
         return None
 
     pid = process_id
-    new_pcb = PCB(pid, instructions, path, start_pos)
+    allocated_block.pid = pid
+    new_pcb = PCB(pid, instructions, path, allocated_block.start)
     pcb_table.append(new_pcb)
     ready_queue.append(new_pcb)
     # print(f"Process {pid} created: {instructions}")

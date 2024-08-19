@@ -339,9 +339,10 @@ class Disk:
         # start_position = memoryService.allocate_memory(sum(len(item) for item in content))
         # CPU执行
         from os_backend.logic.process_manager.schedule import create
-        create(content, path)
-
-        return True, text.get_text('success')
+        pid = create(content, path)
+        if pid is None:
+            return False, text.get_text('disk.run.not_enough_memory')
+        return True, str(pid)
 
     def get_file_list(self, path: str) -> list or None:
         """

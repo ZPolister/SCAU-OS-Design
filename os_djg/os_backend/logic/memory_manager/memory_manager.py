@@ -23,7 +23,7 @@ class MemoryManager:
             Args:
                 size: 需要分配内存的大小
             Returns:
-                申请内存的开始位置，如果没有合适的位置则为None
+                申请的内存块
         """
 
         for block in self.free_blocks:
@@ -41,7 +41,7 @@ class MemoryManager:
                     remaining_block = MemoryBlock(block.start + size, block.size - size)
                     self.free_blocks.append(remaining_block)
                 self.free_blocks.sort(key=lambda x: x.start)
-                return allocated_block.start
+                return allocated_block
         return None
 
     def free_memory(self, start: int) -> bool:
@@ -67,21 +67,28 @@ class MemoryManager:
         Returns:
             None
         """
-        self.free_blocks.sort(key=lambda x: x.start)
+        all_blocks = self.free_blocks + self.allocated_blocks
+        all_blocks.sort(key=lambda x: x.start)
         merged_blocks = []
         current_block = None
-        for block in self.free_blocks:
-            if current_block is None:
-                current_block = block
+        free_position_start = USER_MEMORY_SIZE + 1
+        for block in all_blocks:
+            if block.allocated:
+                if block.start >= free_position_start:
+                    block.start = free_position_start
+                    free_position_start += block.size
+                    # 更新进程块内内存地址
+                    from os_backend.logic.process_manager.schedule import pcb_table
+                    for pcb in pcb_table:
+                        if pcb.pid == block.pid:
+                            pcb.start_pos = block.start
+                merged_blocks.append(block)
             else:
-                if current_block.start + current_block.size == block.start:
-                    current_block.size += block.size
-                else:
-                    merged_blocks.append(current_block)
-                    current_block = block
-        if current_block is not None:
-            merged_blocks.append(current_block)
-        self.free_blocks = merged_blocks
+                if block.start < free_position_start:
+                    free_position_start = block.start
+
+        self.allocated_blocks = merged_blocks
+        self.free_blocks = [MemoryBlock(free_position_start, USER_MEMORY_SIZE - free_position_start)]
 
     def print_memory(self):
         """
@@ -117,4 +124,14 @@ class MemoryManager:
 memoryService = MemoryManager()
 
 if __name__ == "__main__":
-    pass
+    b1 = memoryService.allocate_memory(47)
+    b2 = memoryService.allocate_memory(68)
+    b3 = memoryService.allocate_memory(80)
+    b4 = memoryService.allocate_memory(32)
+    b5 = memoryService.allocate_memory(64)
+
+    memoryService.print_memory()
+    memoryService.free_memory(b2.start)
+    memoryService.print_memory()
+    memoryService.free_memory(b4.start)
+    memoryService.print_memory()
