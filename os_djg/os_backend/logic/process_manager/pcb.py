@@ -10,7 +10,7 @@ class PCB:
         self.x = 0
         self.waiting_for = None
         self.path = path
-        self.start_pos = start_pos
+        self.start_pos = start_pos  # 在内存中开始的位置
 
     def to_dict(self) -> dict:
         return {

@@ -63,12 +63,13 @@ def create(instructions: list[str], path: str) -> int or None:
 
     # 申请内存，内存不足时无法运行
     from os_backend.logic.memory_manager.memory_manager import memoryService
-    start_pos = memoryService.allocate_memory(sum(len(item) for item in instructions))
-    if start_pos is None:
+    allocated_block = memoryService.allocate_memory(sum(len(item) for item in instructions))
+    if allocated_block is None:
         return None
 
     pid = process_id
-    new_pcb = PCB(pid, instructions, path, start_pos)
+    allocated_block.pid = pid
+    new_pcb = PCB(pid, instructions, path, allocated_block.start)
     pcb_table.append(new_pcb)
     ready_queue.append(new_pcb)
     # print(f"Process {pid} created: {instructions}")
@@ -86,6 +87,7 @@ def destroy():
 
     if running_process is not None:
         print(f"Process {running_process.pid} finished with x = {x}")
+        write_result_to_file(running_process)
         pcb_table.remove(running_process)
         # 释放占用的内存
         from os_backend.logic.memory_manager.memory_manager import memoryService
@@ -134,7 +136,7 @@ def CPU():
 
     if running_process and running_process.instructions:
         IR = running_process.instructions[PC]
-        print(f'{system_clock}: {running_process.pid}-{IR}')
+        # print(f'{system_clock}: {running_process.pid}-{IR}')
         # 解释执行指令
         if IR.startswith('x='):
             x = int(IR.split('=')[1])
@@ -159,7 +161,7 @@ def CPU():
             handle_interrupt()
     else:
         IR = ''
-        print(f'{system_clock}: {running_process.pid}-No Process Running')
+        # print(f'{system_clock}: {running_process.pid}-No Process Running')
         schedule()
 
 
@@ -187,12 +189,6 @@ def system_timer():
         CPU()
         time.sleep(1)
         system_clock += 1
-
-        # 发送消息到 WebSocket
-        message = {
-            'type': 'system_timer',
-            'system_clock': system_clock,
-        }
 
         # 获取通道层
         channel_layer = get_channel_layer()
@@ -235,6 +231,19 @@ def get_message_info():
         'disk_usage': DiskService.get_disk_usage(),  # 磁盘块使用情况（记录使用的块号）
         'device_condition': deviceService.get_device_condition()  # 设备情况
     }
+
+
+def write_result_to_file(pcb: PCB) -> None:
+    """
+    写程序结果到文件
+    Args:
+        pcb: 结束的进程
+    Returns:
+
+    """
+    result_text = f'[{pcb.pid}]{pcb.path} : x = {x}'
+    with open(RESULT_FILE_NAME, 'a') as file:
+        file.write(result_text + '\n')
 
 
 if '__main__' == __name__:

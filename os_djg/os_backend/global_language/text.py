@@ -29,6 +29,8 @@ text = {
         'disk.illegal_attribute_value': 'Illegal attribute value',
         'disk.not_found_entry': 'Entry not found',
 
+        'disk.run.not_enough_memory': 'Not enough memory',
+
     },
 
     'zh': {
@@ -57,6 +59,8 @@ text = {
         # 格式化
         'disk.illegal_attribute_value': '非法属性值',
         'disk.not_found_entry': '条目未找到',
+
+        'disk.run.not_enough_memory': '没有足够的内存',
     },
 
     'jp': {
@@ -85,12 +89,14 @@ text = {
         # フォーマット
         'disk.illegal_attribute_value': '不正な属性値',
         'disk.not_found_entry': 'エントリが見つかりません',
+
+        'disk.run.not_enough_memory': '十分なメモリがありません',
     },
 
 }
 
 default_language = 'en'
-_language = 'jp'
+_language = 'zh'
 
 
 def get_text(key: str):

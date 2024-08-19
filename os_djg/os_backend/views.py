@@ -154,7 +154,8 @@ def cmd_run(request):
     """
     request_body = json.loads(request.body)
     flag, result = DiskService.run_executable(request_body.get('path'))
-    return JsonResponse(response_format_data(msg=result))
+    return JsonResponse(response_format_data(msg=result if not flag else text.get_text('success'),
+                                             data=result if flag else None))
 
 
 def cmd_deldir(request):

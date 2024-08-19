@@ -6,3 +6,4 @@ class MemoryBlock:
         self.start = start
         self.size = size
         self.allocated = allocated
+        self.pid = None
