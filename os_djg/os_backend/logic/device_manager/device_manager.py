@@ -82,6 +82,8 @@ class DeviceManager:
         return True
 
     def get_device_condition(self):
+        for i in self.waiting_queue:
+            print(i)
         return {
             'device_status': [
                 {
@@ -100,20 +102,20 @@ class DeviceManager:
             ],
             'waiting_status': [
                 {
-                    'process_id': process_id,
-                    'device_name': device_name,
-                    'waiting_time': waiting_time
+                    'process_id': process['process'].pid,
+                    'device_name': process['device'],
+                    'waiting_time': process['waiting_time']
                 }
-                for process_id, device_name, _, waiting_time in self.waiting_queue
+                for process in self.waiting_queue
             ]
         }
 
     def schedule_device(self):
         release_list = []
+
         for info in self.allocation_table.values():
             process = info['process']
             info['time'] -= 1
-            info['waiting_time'] += 1
 
             if info['time'] <= 0:
                 release_list.append(process.pid)
@@ -123,6 +125,11 @@ class DeviceManager:
 
         for pid in release_list:
             self.release_device(pid)
+        
+        # 对还在等待的进程进行+1计数
+        for process in self.waiting_queue:
+            process['waiting_time'] += 1
+            
 
     def print_status(self):
         print("设备状态：")

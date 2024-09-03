@@ -49,7 +49,7 @@ def schedule():
         running_process = idle_process
 
 
-def create(instructions: list[str], path: str) -> int or None:
+def create(instructions: list[str], path: str) -> int | None:
     """
     创建一个进程
     Args:

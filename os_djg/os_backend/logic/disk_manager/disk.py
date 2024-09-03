@@ -70,7 +70,7 @@ class Disk:
 
             return text.get_text('disk.file_created')
 
-    def delete_file(self, path) -> (bool, str):
+    def delete_file(self, path) -> tuple: 
         """
         删除文件
         Args:
@@ -225,7 +225,7 @@ class Disk:
         block_data[entry_offset:entry_offset + DIRECTORY_ENTRY_SIZE] = b'\x00' * DIRECTORY_ENTRY_SIZE
         system_io.write_block(dir_block, block_data)
 
-    def type_file(self, path: str) -> (bool, str):
+    def type_file(self, path: str) -> tuple[bool, str]:
         # 解析路径并找到文件目录项
         dir_block, entry_offset, dir_entry = self.find_directory_entry(path, ENTRY_FILE)
         if dir_block is None or self.is_dir(dir_entry):
@@ -314,7 +314,7 @@ class Disk:
         # 删除目录项
         self.delete_directory_entry(dir_block, entry_offset)
 
-    def run_executable(self, path) -> (bool, str):
+    def run_executable(self, path) -> tuple[bool, str]:
         # 解析路径并找到可执行文件内容
         dir_block, entry_offset, entry = self.find_directory_entry(path, ENTRY_FILE)
         if entry is None:
@@ -330,7 +330,7 @@ class Disk:
             content += system_io.read_block(current_block)
             current_block = self._fat.get_next_block(current_block)
         content = content[:length].decode()
-        content.replace('\n', ' ')
+        content = content.replace(',', ' ')
         content = content.split(' ')
         content = list(filter(None, content))
 
@@ -344,7 +344,7 @@ class Disk:
             return False, text.get_text('disk.run.not_enough_memory')
         return True, str(pid)
 
-    def get_file_list(self, path: str) -> list or None:
+    def get_file_list(self, path: str) -> list | None:
         """
         获得路径下目录列表
         Args:
@@ -386,7 +386,7 @@ class Disk:
 
         return result
 
-    def list_directory(self, path) -> list or None:
+    def list_directory(self, path) -> list | None:
         # 解析路径并找到目录块
         entry_list = self.get_file_list(path)
         if entry_list is None:
