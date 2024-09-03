@@ -331,6 +331,7 @@ class Disk:
             current_block = self._fat.get_next_block(current_block)
         content = content[:length].decode()
         content = content.replace(',', ' ')
+        content = content.replace('\n', ' ')
         content = content.split(' ')
         content = list(filter(None, content))
 

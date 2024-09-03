@@ -148,6 +148,15 @@ def CPU():
             PSW = PROCESS_IO
         elif IR == 'end':
             PSW = PROCESS_END
+        else:
+            from os_backend.global_language.text import get_text
+            send_message({
+                'type': 'error_message',
+                'content': get_text('ir.error')
+            })
+            
+            # 销毁程序
+            PSW = PROCESS_END
 
         PC += 1
         relative_clock -= 1
@@ -190,17 +199,8 @@ def system_timer():
         time.sleep(1)
         system_clock += 1
 
-        # 获取通道层
-        channel_layer = get_channel_layer()
-
-        # 向所有连接的客户端发送消息
-        async_to_sync(channel_layer.group_send)(
-            'system_timer_group',
-            {
-                'type': 'send_timer_message',
-                'message': get_message_info(),
-            }
-        )
+        # 向前端发送消息
+        send_message(get_message_info())
 
         # 更新阻塞队列中的进程时间
         from os_backend.logic.device_manager.device_manager import deviceService
@@ -208,6 +208,18 @@ def system_timer():
 
         awake()
 
+def send_message(message_content: any):
+    # 获取通道层
+    channel_layer = get_channel_layer()
+
+    # 向所有连接的客户端发送消息
+    async_to_sync(channel_layer.group_send)(
+        'system_timer_group',
+        {
+            'type': 'send_timer_message',
+            'message': message_content,
+        }
+    )
 
 def get_message_info():
     """
