@@ -30,6 +30,8 @@ text = {
         'disk.not_found_entry': 'Entry not found',
 
         'disk.run.not_enough_memory': 'Not enough memory',
+        
+        'ir.error': "Syntax error",
 
     },
 
@@ -61,6 +63,8 @@ text = {
         'disk.not_found_entry': '条目未找到',
 
         'disk.run.not_enough_memory': '没有足够的内存',
+        
+        'ir.error': "语法错误",
     },
 
     'jp': {
@@ -91,6 +95,8 @@ text = {
         'disk.not_found_entry': 'エントリが見つかりません',
 
         'disk.run.not_enough_memory': '十分なメモリがありません',
+        
+        'ir.error': "構文エラー",
     },
 
 }

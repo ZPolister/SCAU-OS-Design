@@ -10,7 +10,7 @@ class ProcessManagerConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps({
             "message_type": "connected"
         }))
-        print(self.channel_layer)
+        # print(self.channel_layer)
         # 加入组
         await self.channel_layer.group_add(
             'system_timer_group',
