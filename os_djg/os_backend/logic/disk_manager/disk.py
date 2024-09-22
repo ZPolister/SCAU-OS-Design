@@ -330,9 +330,7 @@ class Disk:
             content += system_io.read_block(current_block)
             current_block = self._fat.get_next_block(current_block)
         content = content[:length].decode()
-        content = content.replace(',', ' ')
-        content = content.replace('\n', ' ')
-        content = content.split(' ')
+        content = content.replace(',', ' ').replace('\n', ' ').replace(';', ' ').split(' ')
         content = list(filter(None, content))
 
         # # 占用内存
