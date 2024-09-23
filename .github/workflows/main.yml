@@ -16,7 +16,7 @@ jobs:
           source "$HOME/miniconda/etc/profile.d/conda.sh"
           conda init bash
           conda config --set auto_activate_base false
-          conda env create -f .github/workflows/environment.yaml
+          conda env create -f /home/runner/work/SCAU-OS-Design/.github/workflows/environment.yaml
 
       - name: pull and reload on Aliyun
         run: |
