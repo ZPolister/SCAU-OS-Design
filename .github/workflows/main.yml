@@ -10,6 +10,6 @@ jobs:
 
     steps:
       - name: pull and reload on TencentYun
-        run: sshpass -p ${{secrets.ECS_PASSWORD}} ssh -o StrictHostKeyChecking=no ${{secrets.ECS_USERNAME}}@${{secrets.ECS_IP}} "cd ~/SCAU_OS_Design/os_djg; python kill.py; git pull --force; git checkout master; python manage.py runserver 0.0.0.0:8000;"
+        run: sshpass -p ${{secrets.ECS_PASSWORD}} ssh -o StrictHostKeyChecking=no ${{secrets.ECS_USERNAME}}@${{secrets.ECS_IP}} "cd /usr; git clone https://github.com/ZPolister/SCAU-OS-Design.git; cd SCAU_OS_Design/os_djg; python kill.py; git pull --force; git checkout master; python manage.py runserver 0.0.0.0:8000;"
 
 
