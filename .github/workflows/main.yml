@@ -1,0 +1,15 @@
+name: Django_deploy
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: pull and reload on Aliyun
+        run: sshpass -p ${{secrets.ECS_PASSWORD}} ssh -o StrictHostKeyChecking=no ${{secrets.ECS_USERNAME}}@${{secrets.ECS_IP}} "cd ~/SCAU_OS_Design/os_djg; python kill.py; git pull --force; git checkout master; python manage.py;"
+
+
