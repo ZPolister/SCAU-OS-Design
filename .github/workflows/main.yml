@@ -22,13 +22,19 @@ jobs:
           ECS_IP: ${{ secrets.ECS_IP }}
         run: |
           sshpass -p ${{ secrets.ECS_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.ECS_USERNAME }}@${{ secrets.ECS_IP }} "
+          set -x  # 开启调试
           cd /usr
-          git clone https://github.com/ZPolister/SCAU-OS-Design.git
+          git clone https://github.com/ZPolister/SCAU-OS-Design.git || { echo 'Clone failed'; exit 1; }
           cd SCAU-OS-Design/os_djg
           source ~/anaconda3/etc/profile.d/conda.sh  # 加载 Conda
           conda activate os-env            # 激活 os-env 环境
           git pull --force
           git checkout master
-          pkill -f 'manage.py runserver' || true
+          if pgrep -f 'manage.py runserver'; then
+            pkill -f 'manage.py runserver'
+            echo 'Old process killed'
+          else
+            echo 'No process found to kill'
+          fi
           python manage.py runserver 0.0.0.0:8000
           "
