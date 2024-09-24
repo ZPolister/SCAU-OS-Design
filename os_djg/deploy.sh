@@ -22,3 +22,4 @@ else
   echo "No running manage.py runserver processes found."
 fi
 
+nohup python manage.py runserver 0.0.0.0:8000 > django_server.log 2>&1 &

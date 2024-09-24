@@ -30,7 +30,6 @@ jobs:
           conda activate os-env            # 激活 os-env 环境
           git pull --force
           git checkout master
-          bash kill.sh
-          nohup python manage.py runserver 0.0.0.0:8000 > django_server.log 2>&1 &
+          bash deploy.sh
           echo 'Django server started'
           "
