@@ -1,26 +1,34 @@
-name: Django_deploy
+name: Django Deploy
 
 on:
   push:
-    branches: [master]
+    branches:
+      - master  # 触发分支为 master
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Install Miniconda
-        run: |
-          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
-          bash ~/miniconda.sh -b -p $HOME/miniconda
-          source "$HOME/miniconda/etc/profile.d/conda.sh"
-          conda init bash
-          conda config --set auto_activate_base false
-          conda env create -f /home/runner/work/SCAU-OS-Design/.github/workflows/environment.yaml
+      # 检出代码仓库
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: pull and reload on Aliyun
+      # 部署到远程服务器
+      - name: Deploy to Server
+        env:
+          ECS_USERNAME: ${{ secrets.ECS_USERNAME }}
+          ECS_PASSWORD: ${{ secrets.ECS_PASSWORD }}
+          ECS_IP: ${{ secrets.ECS_IP }}
         run: |
-          source "$HOME/miniconda/etc/profile.d/conda.sh"
-          conda activate os-env
-          sshpass -p ${{secrets.ECS_PASSWORD}} ssh -o StrictHostKeyChecking=no ${{secrets.ECS_USERNAME}}@${{secrets.ECS_IP}} "cd /usr; git clone https://github.com/ZPolister/SCAU-OS-Design.git; cd SCAU-OS-Design/os_djg; python kill.py; git pull --force; git checkout master; python manage.py runserver 0.0.0.0:8000;"
-
+          sshpass -p ${{ secrets.ECS_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.ECS_USERNAME }}@${{ secrets.ECS_IP }} "
+          cd /usr
+          git clone https://github.com/ZPolister/SCAU-OS-Design.git
+          cd SCAU-OS-Design/os_djg
+          source ~/anaconda3/etc/profile.d/conda.sh  # 加载 Conda
+          conda activate os-env            # 激活 os-env 环境
+          python kill.py
+          git pull --force
+          git checkout master
+          python manage.py runserver 0.0.0.0:8000
+          "
