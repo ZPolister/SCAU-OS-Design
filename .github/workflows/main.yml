@@ -31,10 +31,10 @@ jobs:
           git pull --force
           git checkout master
           if pgrep -f 'manage.py runserver'; then
-            pkill -f 'manage.py runserver'
-            echo 'Old process killed'
+              PID=$(pgrep -f 'manage.py runserver')
+              kill $PID && echo 'Old process killed' || echo 'Failed to kill the process'
           else
-            echo 'No process found to kill'
+              echo 'No process found to kill'
           fi
           python manage.py runserver 0.0.0.0:8000
           "
