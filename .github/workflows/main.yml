@@ -24,7 +24,7 @@ jobs:
           sshpass -p ${{ secrets.ECS_PASSWORD }} ssh -o StrictHostKeyChecking=no ${{ secrets.ECS_USERNAME }}@${{ secrets.ECS_IP }} "
           set -x  # 开启调试
           cd /usr
-          git clone https://github.com/ZPolister/SCAU-OS-Design.git || { echo 'Clone failed'; exit 1; }
+          git clone https://github.com/ZPolister/SCAU-OS-Design.git
           cd SCAU-OS-Design/os_djg
           source ~/anaconda3/etc/profile.d/conda.sh  # 加载 Conda
           conda activate os-env            # 激活 os-env 环境
