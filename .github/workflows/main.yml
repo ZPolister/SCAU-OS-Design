@@ -27,8 +27,8 @@ jobs:
           cd SCAU-OS-Design/os_djg
           source ~/anaconda3/etc/profile.d/conda.sh  # 加载 Conda
           conda activate os-env            # 激活 os-env 环境
-          python kill.py
           git pull --force
           git checkout master
+          pkill -f "manage.py runserver"
           python manage.py runserver 0.0.0.0:8000
           "
