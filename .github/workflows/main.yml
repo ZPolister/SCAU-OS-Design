@@ -29,6 +29,6 @@ jobs:
           conda activate os-env            # 激活 os-env 环境
           git pull --force
           git checkout master
-          pkill -f 'manage.py runserver'
+          pkill -f 'manage.py runserver' || true
           python manage.py runserver 0.0.0.0:8000
           "
