@@ -9,7 +9,7 @@ from os_backend.global_language import text
 
 
 def test(request):
-    return JsonResponse({'test': 'test'})
+    return JsonResponse({'test': 'test123'})
 
 
 def cmd_ls(request):
