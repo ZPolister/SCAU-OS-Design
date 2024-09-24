@@ -31,20 +31,26 @@ jobs:
           git pull --force
           git checkout master
           
-          # 查找进程并输出 PID
-          PIDS=\$(ps aux | grep 'manage.py runserver' | grep -v grep | awk '{print \$2}')
-          echo "Found PIDs: \$PIDS"
-
-          if [ -n "\$PIDS" ]; then
-            for pid in \$PIDS; do
-              if kill -9 \$pid; then
-                echo "Killed process \$pid"
+          # 获取所有 manage.py runserver 的进程号
+          PIDS=$(pgrep -f 'manage.py runserver')
+          
+          # 检查是否找到进程
+          if [ -n "$PIDS" ]; then
+            echo "Found PIDs: $PIDS"
+            
+            # 循环处理每个 PID
+            for pid in $PIDS; do
+              # 检查进程是否仍在运行
+              if ps -p $pid > /dev/null; then
+                echo "Killing process $pid"
+                kill -9 $pid  # 杀掉进程
+                sleep 0.5     # 等待 0.5 秒
               else
-                echo "Failed to kill process \$pid"
+                echo "Process $pid is not running"
               fi
             done
           else
-            echo 'No process found to kill'
+            echo "No running manage.py runserver processes found."
           fi
           
           nohup python manage.py runserver 0.0.0.0:8000 > django_server.log 2>&1 &
