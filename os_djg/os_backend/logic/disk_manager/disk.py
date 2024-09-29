@@ -389,7 +389,7 @@ class Disk:
         # 解析路径并找到目录块
         entry_list = self.get_file_list(path)
         if entry_list is None:
-            return None
+            return []
 
         return [f"{entry['filename']}{'.' + entry['ext'] if not self.is_dir(entry) else ''}" for entry in entry_list]
 
