@@ -2,6 +2,7 @@ from collections import deque
 
 from os_backend.logic.device_manager.device import Device
 from os_backend.logic.process_manager import pcb
+from os_backend.logger import log
 
 
 class DeviceManager:
@@ -26,7 +27,7 @@ class DeviceManager:
             是否申请成功
         """
         if device_name not in self.devices:
-            print(f"Device {device_name} does not exist.")
+            log.info(f"所请求设备{device_name} 不存在。")
             return False
 
         # print(process.instructions)
@@ -41,10 +42,10 @@ class DeviceManager:
         if device.available_count > 0:
             device.available_count -= 1
             self.allocation_table[process_id] = request_info
-            print(f"设备 {device_name} 分配给 {process_id}")
+            log.info(f"设备 {device_name} 分配给 {process_id}")
             return True
         else:
-            print(f"设备 {device_name} 不足. 进程 {process_id} 进入等待队列")
+            log.info(f"设备 {device_name} 不足. 进程 {process_id} 进入等待队列")
             self.waiting_queue.append(request_info)
             return False
 
@@ -82,8 +83,7 @@ class DeviceManager:
         return True
 
     def get_device_condition(self):
-        for i in self.waiting_queue:
-            print(i)
+
         return {
             'device_status': [
                 {
@@ -132,15 +132,15 @@ class DeviceManager:
             
 
     def print_status(self):
-        print("设备状态：")
+        log.info("设备状态：")
         for device in self.devices.values():
-            print(f"设备{device.name}: {device.available_count}/{device.total_count} 可用")
-        print("设备分配情况：")
+            log.info(f"设备{device.name}: {device.available_count}/{device.total_count} 可用")
+        log.info("设备分配情况：")
         for process_id, device_name in self.allocation_table.items():
-            print(f"进程 {process_id} -> 设备 {device_name}")
-        print("Waiting Queue:")
+            log.info(f"进程 {process_id} -> 设备 {device_name}")
+        log.info("Waiting Queue:")
         for process_id, device_name in self.waiting_queue:
-            print(f"进程 {process_id} 正在等待 {device_name}")
+            log.info(f"进程 {process_id} 正在等待 {device_name}")
 
 
 # 单实例导出

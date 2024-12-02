@@ -1,9 +1,12 @@
 import threading
 import time
+import os
+import csv
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
+from os_backend.logger import log
 from os_backend.logic.process_manager.process_constant import *
 from os_backend.logic.process_manager.pcb import PCB
 
@@ -72,7 +75,7 @@ def create(instructions: list[str], path: str) -> int | None:
     new_pcb = PCB(pid, instructions, path, allocated_block.start)
     pcb_table.append(new_pcb)
     ready_queue.append(new_pcb)
-    # print(f"Process {pid} created: {instructions}")
+    log.info(f"进程 {pid} 已创建: {path}")
     process_id += 1
     return pid
 
@@ -86,8 +89,8 @@ def destroy():
     global running_process
 
     if running_process is not None:
-        print(f"Process {running_process.pid} finished with x = {x}")
-        write_result_to_file(running_process)
+        log.info(f"Process {running_process.pid} finished with x = {x}")
+        write_result_to_csv(running_process)
         pcb_table.remove(running_process)
         # 释放占用的内存
         from os_backend.logic.memory_manager.memory_manager import memoryService
@@ -128,7 +131,7 @@ def awake():
             process.state = READY
             ready_queue.append(process)
             blocked_queue.remove(process)
-            print(f"Process {process.pid} awakened.")
+            log.info(f"Process {process.pid} awakened.")
 
 
 def CPU():
@@ -136,7 +139,7 @@ def CPU():
 
     if running_process and running_process.instructions:
         IR = running_process.instructions[PC]
-        # print(f'{system_clock}: {running_process.pid}-{IR}')
+        log.debug(f'{system_clock}: {running_process.pid}-{IR}')
         # 解释执行指令
         if IR.startswith('x='):
             x = int(IR.split('=')[1])
@@ -170,7 +173,6 @@ def CPU():
             handle_interrupt()
     else:
         IR = ''
-        # print(f'{system_clock}: {running_process.pid}-No Process Running')
         schedule()
 
 
@@ -208,6 +210,7 @@ def system_timer():
 
         awake()
 
+
 def send_message(message_content: any):
     # 获取通道层
     channel_layer = get_channel_layer()
@@ -220,6 +223,7 @@ def send_message(message_content: any):
             'message': message_content,
         }
     )
+
 
 def get_message_info():
     """
@@ -245,17 +249,28 @@ def get_message_info():
     }
 
 
-def write_result_to_file(pcb: PCB) -> None:
+def write_result_to_csv(pcb: PCB) -> None:
     """
-    写程序结果到文件
+    写程序结果到CSV文件
     Args:
         pcb: 结束的进程
     Returns:
-
+        None
     """
-    result_text = f'[{pcb.pid}]{pcb.path} : x = {x}'
-    with open(RESULT_FILE_NAME, 'a') as file:
-        file.write(result_text + '\n')
+    result_row = [pcb.pid, pcb.path, pcb.x]
+
+    # 判断文件是否存在
+    file_exists = os.path.exists(RESULT_FILE_NAME)
+
+    with open(RESULT_FILE_NAME, mode='a', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file)
+
+        # 如果文件不存在，写入表头
+        if not file_exists:
+            writer.writerow(['PID', 'Path', 'Result'])
+
+        # 写入结果
+        writer.writerow(result_row)
 
 
 if '__main__' == __name__:

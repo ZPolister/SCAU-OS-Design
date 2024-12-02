@@ -1,3 +1,4 @@
+from os_backend.logger import log
 from os_backend.logic.memory_manager.memory_block import MemoryBlock
 
 USER_MEMORY_SIZE = 512
@@ -94,13 +95,13 @@ class MemoryManager:
         """
         打印内存空间，测试用
         """
-        print("Free Blocks:")
+        log.info("Free Blocks:")
         for block in self.free_blocks:
-            print(f"{block.start}, {block.size}")
+            log.info(f"{block.start}, {block.size}")
 
-        print("Allocated Blocks:")
+        log.info("Allocated Blocks:")
         for block in self.allocated_blocks:
-            print(f" {block.start}, {block.size}")
+            log.info(f" {block.start}, {block.size}")
 
     def get_memory_condition(self):
         memory_blocks = []
