@@ -2,6 +2,7 @@ import logging
 import os
 import struct
 
+from os_backend.logger import log
 from os_backend.logic.disk_manager.disk_constant import *
 import os_backend.logic.disk_manager.system_io as system_io
 import os_backend.logic.disk_manager.fat as fat
@@ -414,7 +415,7 @@ class Disk:
             if not (self.delete_directory(dir_path) if self.is_dir(entry) else self.delete_file(dir_path)):
                 return False
             else:
-                print(f"deleted: {dir_path}")
+                log.info(f"deleted: {dir_path}")
 
         if path != os.sep:
             self.rmdir(path)

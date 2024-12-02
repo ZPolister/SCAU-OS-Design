@@ -34,6 +34,8 @@ urlpatterns = [
     path("change_attribute", views.cmd_change_attribute, name="change_attribute"),
     path("change_language", views.cmd_change_language, name="change_language"),
 
+    path("export_result", views.export_csv, name="export_result"),
+
     # websocket
     path('ws/os_process_ws/', include(os_backend.routing.websocket_urlpatterns)),
 ]

@@ -1,6 +1,9 @@
 import json
+import os
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+
+from os_backend.logic.process_manager.process_constant import RESULT_FILE_NAME
 from os_backend.response_format import response_format_data
 from django.views.decorators.csrf import csrf_exempt
 
@@ -256,3 +259,24 @@ def cmd_change_language(request):
         return JsonResponse(response_format_data())
     else:
         return JsonResponse(response_format_data(401, text.get_text('error')))
+
+
+def export_csv(request):
+    """
+    导出结果文件
+    Args:
+        request: GET
+    """
+    if request.method == 'GET':
+        if not os.path.exists(RESULT_FILE_NAME):
+            return HttpResponse("结果文件不存在！", status=404)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{RESULT_FILE_NAME}"'
+
+        with open(RESULT_FILE_NAME, 'r', encoding='utf-8') as file:
+            response.write(file.read())
+
+        return response
+    else:
+        return JsonResponse(response_format_data(401, '不支持的请求方式'))
