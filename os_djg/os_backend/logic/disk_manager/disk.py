@@ -31,7 +31,6 @@ class Disk:
             path: 绝对路径
             ext: 拓展名
             content: 文件内容
-
         Returns:
             str: 执行信息
         """
@@ -76,7 +75,6 @@ class Disk:
         删除文件
         Args:
             path: 待删除文件的路径
-
         Returns:
             是否删除成功
         """
@@ -229,7 +227,7 @@ class Disk:
     def type_file(self, path: str) -> tuple[bool, str]:
         # 解析路径并找到文件目录项
         dir_block, entry_offset, dir_entry = self.find_directory_entry(path, ENTRY_FILE)
-        if dir_block is None or self.is_dir(dir_entry):
+        if dir_block is None or dir_entry is None or self.is_dir(dir_entry):
             return False, text.get_text('disk.file_not_found')
 
         start_block = dir_entry["start_block"]
@@ -271,7 +269,6 @@ class Disk:
             current_block = self._fat.get_next_block(current_block)
 
         return self.create_file(os.path.join(dest_path, dir_entry["filename"]), dir_entry["ext"], content[:length])
-
 
     def mkdir(self, path):
         path = os.path.normpath(path)
@@ -369,7 +366,7 @@ class Disk:
             return None
         dir_block = entry["start_block"] if flag != -1 else ROOT_DIR_BLOCK
 
-        # 读取目录块s
+        # 读取目录块
         block_data = b''
         while dir_block != 0xFF:
             block_data += system_io.read_block(dir_block)
